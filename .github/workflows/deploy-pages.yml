@@ -1,5 +1,7 @@
 name: Deploy To GitHub Pages
 
+# Workflow updates also serve as a safe redeploy trigger for Pages.
+
 on:
   push:
     branches:
