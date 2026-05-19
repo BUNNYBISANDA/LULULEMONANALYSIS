@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --bg: #f5f1eb;
+  --ink: #1b1713;
+  --muted: #6d645c;
+  --line: rgba(27, 23, 19, 0.08);
+  --panel: rgba(255, 255, 255, 0.9);
+  --accent: #9a4e3b;
+  --accent-soft: #f2e6dd;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: 'IBM Plex Sans', sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background:
+    radial-gradient(circle at top left, rgba(206, 178, 154, 0.34), transparent 26%),
+    radial-gradient(circle at top right, rgba(240, 232, 222, 0.95), transparent 30%),
+    linear-gradient(180deg, #faf8f5 0%, #f4efe8 46%, #f7f3ee 100%);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::selection {
+  background: rgba(154, 78, 59, 0.16);
+}
+
+.font-display {
+  font-family: 'Manrope', sans-serif;
+}
+
+.soft-card {
+  box-shadow: 0 24px 60px -40px rgba(34, 27, 21, 0.38);
+}
+
+.story-grid {
+  background-image:
+    linear-gradient(rgba(27, 23, 19, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(27, 23, 19, 0.055) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.animate-rise {
+  animation: rise-in 0.72s ease-out both;
+}
+
+.animate-rise-delayed {
+  animation: rise-in 0.72s ease-out 0.1s both;
+}
+
+.animate-rise-late {
+  animation: rise-in 0.72s ease-out 0.2s both;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
