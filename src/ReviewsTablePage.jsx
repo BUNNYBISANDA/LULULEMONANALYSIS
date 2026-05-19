@@ -4,15 +4,16 @@ import { AlertTriangle, ArrowLeft, FileSearch, Search, Star } from 'lucide-react
 
 const allFilterValue = 'All'
 const rowsPerPage = 25
-const reviewsPath = '/data/reviews.json'
-const reviewsWithImagesPath = '/data/reviewsWithImages.json'
-const imagesPath = '/data/images.json'
+const basePath = import.meta.env.BASE_URL
+const reviewsPath = `${basePath}data/reviews.json`
+const reviewsWithImagesPath = `${basePath}data/reviewsWithImages.json`
+const imagesPath = `${basePath}data/images.json`
 
 const reviewNavItems = [
-  { label: 'Summary', href: '/#summary', kind: 'anchor' },
-  { label: 'Themes', href: '/#complaints', kind: 'anchor' },
-  { label: 'Groups', href: '/#groups', kind: 'anchor' },
-  { label: 'Gallery', href: '/#gallery', kind: 'anchor' },
+  { label: 'Summary', href: `${basePath}#summary`, kind: 'anchor' },
+  { label: 'Themes', href: `${basePath}#complaints`, kind: 'anchor' },
+  { label: 'Groups', href: `${basePath}#groups`, kind: 'anchor' },
+  { label: 'Gallery', href: `${basePath}#gallery`, kind: 'anchor' },
   { label: 'Reviews', href: '/reviews', kind: 'link', active: true },
 ]
 
