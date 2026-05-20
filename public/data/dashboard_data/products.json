@@ -1,0 +1,23 @@
+[
+  {
+    "product_name": "Define Jacket Nulu",
+    "product_id": "define_jacket_nulu",
+    "productNameId": "Define_Jacket_Nulu",
+    "product_url": "https://shop.lululemon.com/p/jackets-and-hoodies-jackets/Define-Jacket-Nulu/_/prod11020158?color=75697",
+    "category": "Jackets"
+  },
+  {
+    "product_name": "Evolution Short-Sleeve Polo Shirt",
+    "product_id": "evolution_polo",
+    "productNameId": "Evolution_Polo",
+    "product_url": "https://shop.lululemon.com/p/mens-polos/Evolution-Polo/_/prod6020330?color=75671",
+    "category": "Mens Polos"
+  },
+  {
+    "product_name": "Pace Breaker Jacket",
+    "product_id": "pace_breaker_jacket",
+    "productNameId": "Pace_Breaker_Jacket",
+    "product_url": "https://shop.lululemon.com/p/mens-jackets-and-outerwear/Pace-Breaker-Jacket/_/prod11670131?color=74052",
+    "category": "Mens Jackets"
+  }
+]

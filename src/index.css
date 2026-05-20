@@ -1,15 +1,28 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
+@import url('https://rsms.me/inter/inter.css');
 @import "tailwindcss";
 
 :root {
   color-scheme: light;
-  --bg: #f5f1eb;
-  --ink: #1b1713;
-  --muted: #6d645c;
-  --line: rgba(27, 23, 19, 0.08);
-  --panel: rgba(255, 255, 255, 0.9);
-  --accent: #9a4e3b;
-  --accent-soft: #f2e6dd;
+
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-alt: #fafafa;
+  --surface-muted: #f5f5f5;
+
+  --ink: #000000;
+  --ink-secondary: #4a4a4a;
+  --muted: #767676;
+  --muted-soft: #a8a8a8;
+
+  --line: #e5e5e5;
+  --line-soft: #f0f0f0;
+
+  --red: #e20010;
+  --red-hover: #c4000e;
+  --red-soft: #ffe5e8;
+
+  --success: #1f6f3e;
+  --warning: #b35900;
 }
 
 html {
@@ -20,14 +33,12 @@ body {
   margin: 0;
   min-height: 100vh;
   color: var(--ink);
-  font-family: 'IBM Plex Sans', sans-serif;
-  text-rendering: optimizeLegibility;
+  background: var(--bg);
+  font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background:
-    radial-gradient(circle at top left, rgba(206, 178, 154, 0.34), transparent 26%),
-    radial-gradient(circle at top right, rgba(240, 232, 222, 0.95), transparent 30%),
-    linear-gradient(180deg, #faf8f5 0%, #f4efe8 46%, #f7f3ee 100%);
+  text-rendering: optimizeLegibility;
 }
 
 #root {
@@ -35,40 +46,56 @@ body {
 }
 
 ::selection {
-  background: rgba(154, 78, 59, 0.16);
+  background: var(--red);
+  color: #ffffff;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(226, 0, 16, 0.55);
+  outline-offset: 2px;
+}
+
+.brand-mark {
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-transform: lowercase;
 }
 
 .font-display {
-  font-family: 'Manrope', sans-serif;
+  font-family: 'Inter', 'Helvetica Neue', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .soft-card {
-  box-shadow: 0 24px 60px -40px rgba(34, 27, 21, 0.38);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 0 rgba(0, 0, 0, 0.02);
 }
 
 .story-grid {
-  background-image:
-    linear-gradient(rgba(27, 23, 19, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(27, 23, 19, 0.055) 1px, transparent 1px);
-  background-size: 28px 28px;
+  background: #ffffff;
 }
 
 .animate-rise {
-  animation: rise-in 0.72s ease-out both;
+  animation: rise-in 0.5s ease-out both;
 }
 
 .animate-rise-delayed {
-  animation: rise-in 0.72s ease-out 0.1s both;
+  animation: rise-in 0.5s ease-out 0.08s both;
 }
 
 .animate-rise-late {
-  animation: rise-in 0.72s ease-out 0.2s both;
+  animation: rise-in 0.5s ease-out 0.16s both;
 }
 
 @keyframes rise-in {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(8px);
   }
 
   to {

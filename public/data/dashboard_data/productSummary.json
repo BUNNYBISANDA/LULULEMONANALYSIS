@@ -1,0 +1,50 @@
+[
+  {
+    "product_name": "Define Jacket Nulu",
+    "product_id": "define_jacket_nulu",
+    "productNameId": "Define_Jacket_Nulu",
+    "category": "Jackets",
+    "total_reviews": 5347,
+    "low_star_reviews": 515,
+    "one_star_reviews": 221,
+    "two_star_reviews": 106,
+    "three_star_reviews": 188,
+    "reviews_with_images": 78,
+    "total_images": 151,
+    "average_rating": 4.63,
+    "top_complaint_theme": "Sizing & Fit",
+    "top_complaint_share": 40.4
+  },
+  {
+    "product_name": "Evolution Short-Sleeve Polo Shirt",
+    "product_id": "evolution_polo",
+    "productNameId": "Evolution_Polo",
+    "category": "Mens Polos",
+    "total_reviews": 1244,
+    "low_star_reviews": 361,
+    "one_star_reviews": 158,
+    "two_star_reviews": 99,
+    "three_star_reviews": 104,
+    "reviews_with_images": 22,
+    "total_images": 37,
+    "average_rating": 4.0,
+    "top_complaint_theme": "Sizing & Fit",
+    "top_complaint_share": 47.4
+  },
+  {
+    "product_name": "Pace Breaker Jacket",
+    "product_id": "pace_breaker_jacket",
+    "productNameId": "Pace_Breaker_Jacket",
+    "category": "Mens Jackets",
+    "total_reviews": 361,
+    "low_star_reviews": 52,
+    "one_star_reviews": 25,
+    "two_star_reviews": 10,
+    "three_star_reviews": 17,
+    "reviews_with_images": 8,
+    "total_images": 15,
+    "average_rating": 4.48,
+    "top_complaint_theme": "Sizing & Fit",
+    "top_complaint_share": 46.2
+  }
+]
