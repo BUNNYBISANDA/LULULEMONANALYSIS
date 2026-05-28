@@ -12,15 +12,6 @@ export default function Footer() {
           customer images
         </p>
         <div className="flex flex-wrap items-center gap-3">
-          <a
-            href="https://github.com/BUNNYBISANDA/lululemon"
-            target="_blank"
-            rel="noreferrer"
-            className="text-[#767676] transition hover:text-[#000000]"
-          >
-            Source Repository
-          </a>
-          <span className="hidden h-3 w-px bg-black/10 sm:block" />
           <p>
             Voice of Guest intelligence for{' '}
             {data?.isAllProducts
