@@ -9,10 +9,12 @@ import RatingBadge from '../components/primitives/RatingBadge'
 import FilterBar from '../components/filters/FilterBar'
 import ThemeMultiSelect from '../components/filters/ThemeMultiSelect'
 import DateRangePicker from '../components/filters/DateRangePicker'
+import TimePeriodFilter from '../components/filters/TimePeriodFilter'
 import { ALL_FILTER_VALUE, LOGO_PATH } from '../data/constants'
 import {
   filterReviews,
   formatShortDate,
+  hasValue,
   highlightMatch,
   sortReviews,
   truncateText,
@@ -27,13 +29,14 @@ const ROWS_PER_PAGE = 25
 const columnDefinitions = [
   { key: 'rating', label: 'Rating' },
   { key: 'date', label: 'Date' },
+  { key: 'product', label: 'Product' },
   { key: 'theme', label: 'Theme' },
   { key: 'reviewId', label: 'Review ID' },
   { key: 'title', label: 'Title' },
   { key: 'text', label: 'Review Text' },
-  { key: 'verified', label: 'Verified' },
-  { key: 'location', label: 'Location' },
-  { key: 'images', label: 'Images' },
+  { key: 'fit', label: 'Fit Feedback' },
+  { key: 'images', label: 'Photo' },
+  { key: 'response', label: 'Lululemon Response' },
 ]
 
 function HighlightedText({ text, query }) {
@@ -49,7 +52,7 @@ function HighlightedText({ text, query }) {
 }
 
 export default function Reviews() {
-  const { selectedProductId, selectedProductName } = useProductFilter()
+  const { selectedProductId, selectedProductName, selectedTimePeriod } = useProductFilter()
   const { data, loading, error } = useDashboardDataset(true)
   const { filters, updateFilter, resetFilters } = useFilters({
     rating: ALL_FILTER_VALUE,
@@ -93,7 +96,7 @@ export default function Reviews() {
   useEffect(() => {
     setCurrentPage(1)
     setSelectedIndex(0)
-  }, [filters])
+  }, [filters, selectedTimePeriod])
 
   useEffect(() => {
     if (!productChangeRef.current) {
@@ -196,6 +199,11 @@ export default function Reviews() {
       </Panel>
 
       <FilterBar>
+        <div className="w-full">
+          <TimePeriodFilter
+            meta={`Selected period: ${data.selectedTimePeriod}. Showing ${data.periodRangeLabel}.`}
+          />
+        </div>
         <div className="grid flex-1 gap-3 xl:grid-cols-[0.8fr_1.3fr_0.8fr_auto_1fr_0.8fr]">
           <label className="flex flex-col gap-1 text-sm text-[#4a4a4a]">
             <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
@@ -296,7 +304,8 @@ export default function Reviews() {
         <div className="flex items-center justify-between gap-4 border-b border-[#f0f0f0] px-5 py-4 text-sm text-[#4a4a4a]">
           <p>
             Showing <span className="font-semibold text-[#000000]">{filteredReviews.length}</span> of{' '}
-            <span className="font-semibold text-[#000000]">{data.masterReviews.length}</span> low-star reviews
+            <span className="font-semibold text-[#000000]">{data.masterReviews.length}</span>{' '}
+            low-star reviews in {data.selectedTimePeriod}
           </p>
           <p>
             Page {currentPage} of {totalPages}
@@ -305,7 +314,10 @@ export default function Reviews() {
 
         {paginatedRows.length === 0 ? (
           <div className="p-5">
-            <EmptyState />
+            <EmptyState
+              title="No reviews found for this selection"
+              description="Try a broader time period, adjust the product selector, or clear the local review filters."
+            />
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -314,13 +326,16 @@ export default function Reviews() {
                 <tr>
                   {visibleColumns.rating ? <th className="px-5 py-4">Rating</th> : null}
                   {visibleColumns.date ? <th className="px-5 py-4">Date</th> : null}
+                  {visibleColumns.product ? <th className="px-5 py-4">Product</th> : null}
                   {visibleColumns.theme ? <th className="px-5 py-4">Theme</th> : null}
                   {visibleColumns.reviewId ? <th className="px-5 py-4">Review ID</th> : null}
                   {visibleColumns.title ? <th className="px-5 py-4">Title</th> : null}
                   {visibleColumns.text ? <th className="px-5 py-4">Review Text</th> : null}
-                  {visibleColumns.verified ? <th className="px-5 py-4">Verified</th> : null}
-                  {visibleColumns.location ? <th className="px-5 py-4">Location</th> : null}
-                  {visibleColumns.images ? <th className="px-5 py-4">Images</th> : null}
+                  {visibleColumns.fit ? <th className="px-5 py-4">Fit Feedback</th> : null}
+                  {visibleColumns.images ? <th className="px-5 py-4">Photo</th> : null}
+                  {visibleColumns.response ? (
+                    <th className="px-5 py-4">Lululemon Response</th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody>
@@ -358,6 +373,11 @@ export default function Reviews() {
                             {formatShortDate(review.reviewDate)}
                           </td>
                         ) : null}
+                        {visibleColumns.product ? (
+                          <td className="min-w-48 px-5 py-4 text-sm font-medium text-[#000000]">
+                            {review.productName || '-'}
+                          </td>
+                        ) : null}
                         {visibleColumns.theme ? (
                           <td className="px-5 py-4">
                             <span className="rounded-full bg-[#fafafa] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#767676]">
@@ -384,19 +404,31 @@ export default function Reviews() {
                             />
                           </td>
                         ) : null}
-                        {visibleColumns.verified ? (
-                          <td className="px-5 py-4 text-sm text-[#4a4a4a]">
-                            {review.verifiedBuyer ? 'Yes' : 'No'}
-                          </td>
-                        ) : null}
-                        {visibleColumns.location ? (
-                          <td className="px-5 py-4 text-sm text-[#4a4a4a]">
-                            {review.reviewerLocation || '-'}
+                        {visibleColumns.fit ? (
+                          <td className="min-w-40 px-5 py-4 text-sm text-[#4a4a4a]">
+                            {review.fitFeedback || 'Not specified'}
                           </td>
                         ) : null}
                         {visibleColumns.images ? (
-                          <td className="px-5 py-4 text-sm text-[#4a4a4a]">
-                            {review.photoCount || review.imageUrls.length ? 'Yes' : 'No'}
+                          <td className="px-5 py-4">
+                            {review.hasImageEvidence ? (
+                              <span className="rounded-full bg-[#ffe5e8] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#E20010]">
+                                Photo
+                              </span>
+                            ) : (
+                              <span className="text-sm text-[#767676]">No photo</span>
+                            )}
+                          </td>
+                        ) : null}
+                        {visibleColumns.response ? (
+                          <td className="px-5 py-4">
+                            {hasValue(review.luluResponseText) ? (
+                              <span className="rounded-full bg-[#edf6f0] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#1f6f3e]">
+                                Response
+                              </span>
+                            ) : (
+                              <span className="text-sm text-[#767676]">No response</span>
+                            )}
                           </td>
                         ) : null}
                       </tr>

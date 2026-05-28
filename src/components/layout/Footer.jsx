@@ -7,8 +7,9 @@ export default function Footer() {
     <footer className="border-t border-[#e5e5e5] bg-white">
       <div className="mx-auto flex w-full max-w-[1680px] flex-col gap-3 px-3 py-6 text-sm text-[#4a4a4a] sm:px-5 lg:flex-row lg:items-center lg:justify-between lg:px-6 xl:px-8">
         <p>
-          Data updated May 2026 | {data?.masterReviews.length ?? 0} low-star reviews |{' '}
-          {data?.imageItems.length ?? 0} customer images
+          Data updated May 2026 | {data?.selectedTimePeriod ?? '6M'} VOG window |{' '}
+          {data?.masterReviews.length ?? 0} low-star reviews | {data?.imageItems.length ?? 0}{' '}
+          customer images
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <a
@@ -21,7 +22,7 @@ export default function Footer() {
           </a>
           <span className="hidden h-3 w-px bg-black/10 sm:block" />
           <p>
-            Client-facing analysis for{' '}
+            Voice of Guest intelligence for{' '}
             {data?.isAllProducts
               ? 'multi-product lululemon review intelligence.'
               : `${data?.selectedProductName || 'lululemon'} review intelligence.`}

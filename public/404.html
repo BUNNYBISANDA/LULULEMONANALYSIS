@@ -2,26 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>lululemon Review Intelligence Dashboard</title>
+    <title>Lululemon Voice of Guest Intelligence</title>
     <script>
-      const locationToRedirect = window.location
-      const pathSegmentsToKeep = 1
+      const currentLocation = window.location
+      const segments = currentLocation.pathname.split('/').filter(Boolean)
+      const repositoryName = segments[0] || 'LululemonAnalytics'
+      const routePath = segments.slice(1).join('/')
+      const hashRoute = routePath ? '#/' + routePath : '#/'
       const redirectPath =
-        locationToRedirect.protocol +
+        currentLocation.protocol +
         '//' +
-        locationToRedirect.hostname +
-        (locationToRedirect.port ? ':' + locationToRedirect.port : '') +
-        '/lululemon/?/' +
-        locationToRedirect.pathname
-          .slice(1)
-          .split('/')
-          .slice(pathSegmentsToKeep)
-          .join('/')
-          .replace(/&/g, '~and~') +
-        (locationToRedirect.search
-          ? '&' + locationToRedirect.search.slice(1).replace(/&/g, '~and~')
-          : '') +
-        locationToRedirect.hash
+        currentLocation.hostname +
+        (currentLocation.port ? ':' + currentLocation.port : '') +
+        '/' +
+        repositoryName +
+        '/' +
+        hashRoute +
+        currentLocation.search
 
       window.location.replace(redirectPath)
     </script>

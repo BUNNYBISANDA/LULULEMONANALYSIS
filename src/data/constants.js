@@ -1,5 +1,6 @@
 import {
   CircleDollarSign,
+  Eye,
   Headphones,
   Image as ImageIcon,
   MessageSquareQuote,
@@ -14,6 +15,13 @@ export const DASHBOARD_DATA_PATH = `${DATA_PATH}dashboard_data/`
 export const LOGO_PATH = `${BASE_PATH}lululemon-logo.png`
 export const ALL_FILTER_VALUE = 'All'
 export const LOW_STAR_RATINGS = [1, 2, 3]
+export const DEFAULT_TIME_PERIOD = '6M'
+export const TIME_PERIOD_OPTIONS = [
+  { value: '12M', label: '12M', months: 12 },
+  { value: '6M', label: '6M', months: 6 },
+  { value: '3M', label: '3M', months: 3 },
+  { value: '1M', label: '1M', months: 1 },
+]
 
 export const severityPalette = {
   1: '#E20010',
@@ -40,7 +48,8 @@ export const trendPalette = {
 }
 
 export const navRoutes = [
-  { label: 'Analytics', to: '/analytics', end: true },
+  { label: 'Vision', to: '/', end: true },
+  { label: 'Analytics', to: '/analytics' },
   { label: 'Reviews', to: '/reviews' },
   { label: 'Gallery', to: '/gallery' },
 ]
@@ -310,6 +319,7 @@ export const insightRecommendations = [
 ]
 
 export const pageMetadata = {
+  vision: { title: 'Vision', path: '/', icon: Eye },
   analytics: { title: 'Analytics', path: '/analytics', icon: PackageSearch },
   reviews: { title: 'Reviews Explorer', path: '/reviews', icon: MessageSquareQuote },
   gallery: { title: 'Image Gallery', path: '/gallery', icon: ImageIcon },

@@ -52,11 +52,12 @@ export function useDataset(loader, deps = []) {
 }
 
 export function useDashboardDataset(includeMaster = false) {
-  const { selectedProductId } = useProductFilter()
+  const { selectedProductId, selectedTimePeriod } = useProductFilter()
   const state = useDataset(() => loadDashboardBundle(includeMaster), [includeMaster])
   const normalizedData = useMemo(
-    () => (state.data ? buildDashboardData(state.data, selectedProductId) : null),
-    [selectedProductId, state.data],
+    () =>
+      state.data ? buildDashboardData(state.data, selectedProductId, selectedTimePeriod) : null,
+    [selectedProductId, selectedTimePeriod, state.data],
   )
 
   if (!normalizedData) {

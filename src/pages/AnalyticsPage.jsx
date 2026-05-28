@@ -25,8 +25,13 @@ import Panel from '../components/primitives/Panel'
 import SectionHeader from '../components/primitives/SectionHeader'
 import KpiTile from '../components/primitives/KpiTile'
 import Skeleton from '../components/primitives/Skeleton'
+import EmptyState from '../components/primitives/EmptyState'
+import RatingBadge from '../components/primitives/RatingBadge'
 import ThemeBarChart from '../components/charts/ThemeBarChart'
+import TrendLine from '../components/charts/TrendLine'
+import TimePeriodFilter from '../components/filters/TimePeriodFilter'
 import { LOGO_PATH, severityPalette, themePalette } from '../data/constants'
+import { formatShortDate, hasValue, sortReviews, truncateText } from '../data/selectors'
 import { useDashboardDataset } from '../hooks/useDataset'
 import { useExportRegistration } from '../hooks/useExport'
 
@@ -108,20 +113,39 @@ export default function Analytics() {
   const volumeDelta = latestMonth && previousMonth ? latestMonth.total - previousMonth.total : 0
   const topThemes = data.themeRows.slice(0, 4)
   const topThemeBreakdown = data.themeRows.slice(0, 5)
+  const hasThemeData = data.themeRows.length > 0
+  const hasTrendData = data.monthlyTrend.length > 0
+  const hasRatingsData = data.ratingsDistribution.some((item) => item.count > 0)
+  const recentCriticalReviews = sortReviews(data.masterReviews, 'lowest-rating').slice(0, 5)
+  const imagePreviewItems = [...data.imageItems]
+    .sort((left, right) => {
+      const leftDate = new Date(left.reviewDate).getTime()
+      const rightDate = new Date(right.reviewDate).getTime()
+      return rightDate - leftDate
+    })
+    .slice(0, 4)
   const heroTitle = data.isAllProducts
-    ? 'Cross-product low-star signals show where quality, fit, and service issues cluster most.'
+    ? 'Cross-product guest signals reveal where quality, fit, and service issues cluster most.'
     : `${data.topComplaintTheme?.theme || 'Low-star feedback'} remains the clearest risk signal for ${data.selectedProductName}.`
   const heroDescription = data.isAllProducts
-    ? 'Use the product selector to move from a portfolio view into a specific style. All charts, KPIs, reviews, and image evidence below update from the same low-star review intelligence pipeline.'
-    : `This view isolates ${data.selectedProductName} so teams can move from high-level complaint concentration into theme, fit, response, review, and photo evidence without leaving the dashboard.`
+    ? 'Use the product selector to move from a portfolio view into a specific style. Every KPI, chart, review, and image preview below updates from the selected Voice of Guest period.'
+    : data.masterReviews.length > 0
+      ? `This view isolates ${data.selectedProductName} so teams can move from complaint concentration into theme, fit, response, review, and photo evidence without leaving the dashboard.`
+      : 'Historical data is available for this product, but the selected period has no recent VOG activity.'
   const heroPills = [
     `Product / ${data.isAllProducts ? 'All Products' : data.selectedProductName}`,
-    `Category / ${data.isAllProducts ? `${data.products.length} product styles` : data.selectedProduct?.category || 'Unspecified'}`,
+    `Period / ${data.selectedTimePeriod}`,
     `Evidence / ${data.masterReviews.length} low-star reviews + ${data.imageItems.length} customer images`,
   ]
 
   return (
     <div className="space-y-8">
+      <Panel className="p-4 sm:p-5">
+        <TimePeriodFilter
+          meta={`Anchored to latest review date: ${data.anchorDateLabel}. Showing ${data.periodRangeLabel}.`}
+        />
+      </Panel>
+
       <Panel className="story-grid overflow-hidden p-7 sm:p-8">
         <SectionHeader
           eyebrow="Executive Summary"
@@ -149,6 +173,12 @@ export default function Analytics() {
         </div>
       </Panel>
 
+      {!data.isAllProducts && data.masterReviews.length === 0 ? (
+        <Panel className="border-[#f1c7cb] bg-[#fff9fa] p-6 text-sm font-medium leading-7 text-[#4a4a4a]">
+          Historical data available. No recent VOG activity in the selected period.
+        </Panel>
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <KpiTile
           label="Total Low-Star Reviews"
@@ -163,8 +193,8 @@ export default function Analytics() {
         />
         <KpiTile
           label="Average Rating"
-          value={data.rollingAverageSeries.at(-1)?.rollingAverage || 0}
-          note="Three-month rolling average of low-star review sentiment."
+          value={data.averageRating || 'No data'}
+          note="Average rating across low-star reviews in the selected period."
           delta={{
             tone: 'neutral',
             label: `Current month ${latestMonth?.averageRating || 0}`,
@@ -205,7 +235,16 @@ export default function Analytics() {
               title="Low-star review concentration can now be compared across product styles."
               description="When multiple styles are loaded through the pipeline, this comparison layer helps teams see which products generate the heaviest low-star burden first."
             />
-            <div className="mt-6 h-[340px]">
+            {data.comparisonBarData.length === 0 ? (
+              <div className="mt-6">
+                <EmptyState
+                  title="No recent product activity"
+                  description="Historical data is available, but no low-star reviews fall inside the selected period."
+                />
+              </div>
+            ) : null}
+            {data.comparisonBarData.length ? (
+              <div className="mt-6 h-[340px]">
               <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={260}>
                 <BarChart data={data.comparisonBarData} margin={{ top: 8, right: 20, left: 8, bottom: 32 }}>
                   <CartesianGrid stroke="#f0f0f0" vertical={false} />
@@ -260,7 +299,8 @@ export default function Analytics() {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-            </div>
+              </div>
+            ) : null}
           </Panel>
 
           <Panel className="overflow-hidden">
@@ -286,6 +326,7 @@ export default function Analytics() {
                     <th className="px-5 py-4">Total Images</th>
                     <th className="px-5 py-4">Top Complaint Theme</th>
                     <th className="px-5 py-4">Top Complaint Share</th>
+                    <th className="px-5 py-4">Period Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -307,6 +348,9 @@ export default function Analytics() {
                       <td className="px-5 py-4 text-[#4a4a4a]">
                         {row.topComplaintShare ? `${row.topComplaintShare.toFixed(1)}%` : '-'}
                       </td>
+                      <td className="min-w-64 px-5 py-4 text-[#4a4a4a]">
+                        {row.statusMessage || 'Active VOG signal in selected period.'}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -324,12 +368,18 @@ export default function Analytics() {
             description="Distinct theme colors separate the issue types clearly so the leading signals are presentation-ready at a glance."
           />
           <div className="mt-6">
-            <ThemeBarChart
-              data={data.themeRows}
-              dataKey="totalReviews"
-              percentageKey="overallShare"
-              title="Complaint themes ranked by low-star review count"
-            />
+            {hasThemeData ? (
+              <ThemeBarChart
+                data={data.themeRows}
+                dataKey="totalReviews"
+                percentageKey="overallShare"
+                title="Complaint themes ranked by low-star review count"
+              />
+            ) : (
+              <div className="rounded-[20px] border border-[#e5e5e5] bg-[#fafafa] p-6 text-sm text-[#4a4a4a]">
+                No complaint themes found for the selected product and time period.
+              </div>
+            )}
           </div>
         </Panel>
 
@@ -339,36 +389,42 @@ export default function Analytics() {
               Theme Share Breakdown
             </p>
             <div className="mt-4 space-y-4">
-              {topThemeBreakdown.map((theme, index) => (
-                <div key={theme.slug}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
+              {topThemeBreakdown.length ? (
+                topThemeBreakdown.map((theme, index) => (
+                  <div key={theme.slug}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p
+                          className={`text-sm font-medium ${index === 0 ? 'text-[#E20010]' : 'text-[#000000]'}`}
+                        >
+                          {theme.theme}
+                        </p>
+                        <p className="mt-1 text-xs text-[#767676]">
+                          {theme.totalReviews} reviews
+                        </p>
+                      </div>
                       <p
-                        className={`text-sm font-medium ${index === 0 ? 'text-[#E20010]' : 'text-[#000000]'}`}
+                        className={`shrink-0 text-sm font-semibold ${index === 0 ? 'text-[#E20010]' : 'text-[#4a4a4a]'}`}
                       >
-                        {theme.theme}
-                      </p>
-                      <p className="mt-1 text-xs text-[#767676]">
-                        {theme.totalReviews} reviews
+                        {theme.overallShare.toFixed(1)}%
                       </p>
                     </div>
-                    <p
-                      className={`shrink-0 text-sm font-semibold ${index === 0 ? 'text-[#E20010]' : 'text-[#4a4a4a]'}`}
-                    >
-                      {theme.overallShare.toFixed(1)}%
-                    </p>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#f0f0f0]">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${Math.max(theme.overallShare, 8)}%`,
+                          backgroundColor: index === 0 ? '#E20010' : theme.fill,
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#f0f0f0]">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${Math.max(theme.overallShare, 8)}%`,
-                        backgroundColor: index === 0 ? '#E20010' : theme.fill,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm leading-6 text-[#4a4a4a]">
+                  No theme share is available for this selection.
+                </p>
+              )}
             </div>
           </Panel>
 
@@ -377,27 +433,59 @@ export default function Analytics() {
               Priority Readout
             </p>
             <div className="mt-4 space-y-4">
-              {topThemes.map((theme) => (
-                <div key={theme.slug}>
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="text-sm font-medium text-[#000000]">{theme.theme}</p>
-                    <p className="text-sm text-[#4a4a4a]">{theme.totalReviews} reviews</p>
+              {topThemes.length ? (
+                topThemes.map((theme) => (
+                  <div key={theme.slug}>
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="text-sm font-medium text-[#000000]">{theme.theme}</p>
+                      <p className="text-sm text-[#4a4a4a]">{theme.totalReviews} reviews</p>
+                    </div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#f0f0f0]">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${Math.max(theme.overallShare, 8)}%`,
+                          backgroundColor: theme.fill,
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#f0f0f0]">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${Math.max(theme.overallShare, 8)}%`,
-                        backgroundColor: theme.fill,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm leading-6 text-[#4a4a4a]">
+                  No priority readout is available for this selection.
+                </p>
+              )}
             </div>
           </Panel>
         </div>
       </div>
+
+      <Panel className="p-7 sm:p-8">
+        <SectionHeader
+          eyebrow="Monthly Trend"
+          title="Low-star signal volume by review month."
+          description="The trend view shows whether recent guest dissatisfaction is rising, stabilizing, or concentrating in specific severity bands."
+        />
+        <div className="mt-6">
+          {hasTrendData ? (
+            <TrendLine
+              data={data.monthlyTrend}
+              type="area"
+              title="Monthly low-star review trend"
+              areas={[
+                { dataKey: 'oneStar', stroke: severityPalette[1], fill: severityPalette[1] },
+                { dataKey: 'twoStar', stroke: severityPalette[2], fill: severityPalette[2] },
+                { dataKey: 'threeStar', stroke: severityPalette[3], fill: severityPalette[3] },
+              ]}
+            />
+          ) : (
+            <div className="rounded-[20px] border border-[#e5e5e5] bg-[#fafafa] p-6 text-sm text-[#4a4a4a]">
+              No monthly trend is available for the selected period.
+            </div>
+          )}
+        </div>
+      </Panel>
 
       <div className="grid gap-6">
         <Panel className="p-7 sm:p-8">
@@ -406,41 +494,145 @@ export default function Analytics() {
             title="Most evidence sits in severe dissatisfaction, but mixed frustration remains meaningful."
             description="The low-star pool is still anchored by 1-star reviews, while 3-star reviews help show expectation gaps that do not always lead to total rejection."
           />
-          <div className="mt-6 h-[340px]">
-            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={260}>
-              <PieChart>
-                <Pie
-                  data={data.ratingsDistribution}
-                  dataKey="count"
-                  nameKey="label"
-                  innerRadius={74}
-                  outerRadius={120}
-                  paddingAngle={3}
-                  isAnimationActive={false}
+          {hasRatingsData ? (
+            <>
+              <div className="mt-6 h-[340px]">
+                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={260}>
+                  <PieChart>
+                    <Pie
+                      data={data.ratingsDistribution}
+                      dataKey="count"
+                      nameKey="label"
+                      innerRadius={74}
+                      outerRadius={120}
+                      paddingAngle={3}
+                      isAnimationActive={false}
+                    >
+                      {data.ratingsDistribution.map((entry) => (
+                        <Cell key={entry.label} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #e5e5e5',
+                        borderRadius: 16,
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {data.ratingsDistribution.map((entry) => (
+                  <span
+                    key={entry.label}
+                    className="rounded-full border border-[#e5e5e5] bg-white px-3 py-1 text-sm text-[#4a4a4a]"
+                  >
+                    {entry.label}: {entry.count}
+                  </span>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="mt-6 rounded-[20px] border border-[#e5e5e5] bg-[#fafafa] p-6 text-sm text-[#4a4a4a]">
+              No rating distribution is available for the selected period.
+            </div>
+          )}
+        </Panel>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+        <Panel className="p-7 sm:p-8">
+          <SectionHeader
+            eyebrow="Image Evidence Preview"
+            title="Customer photos show what text alone can miss."
+            description="Image-backed reviews are filtered to the same product and time period, keeping visual evidence aligned with the executive readout."
+          />
+          {imagePreviewItems.length ? (
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              {imagePreviewItems.map((item) => (
+                <Link
+                  key={item.key}
+                  to="/gallery"
+                  className="overflow-hidden rounded-[20px] border border-[#e5e5e5] bg-white transition hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)]"
                 >
-                  {data.ratingsDistribution.map((entry) => (
-                    <Cell key={entry.label} fill={entry.fill} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e5e5e5',
-                    borderRadius: 16,
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {data.ratingsDistribution.map((entry) => (
-              <span
-                key={entry.label}
-                className="rounded-full border border-[#e5e5e5] bg-white px-3 py-1 text-sm text-[#4a4a4a]"
-              >
-                {entry.label}: {entry.count}
-              </span>
-            ))}
+                  <div className="aspect-[4/3] bg-[#f5f5f5]">
+                    <img
+                      src={item.thumbnailUrl || item.imageUrl}
+                      alt={item.reviewTitle}
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="space-y-2 p-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <RatingBadge rating={item.rating} compact />
+                      <span className="rounded-full bg-[#fafafa] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#767676]">
+                        {item.complaintTheme}
+                      </span>
+                    </div>
+                    <p className="line-clamp-2 text-sm font-semibold text-black">
+                      {item.reviewTitle}
+                    </p>
+                    <p className="text-xs text-[#767676]">{formatShortDate(item.reviewDate)}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-6 rounded-[20px] border border-[#e5e5e5] bg-[#fafafa] p-6 text-sm text-[#4a4a4a]">
+              No image-backed reviews found for this selection.
+            </div>
+          )}
+        </Panel>
+
+        <Panel className="p-7 sm:p-8">
+          <SectionHeader
+            eyebrow="Recent Critical Reviews"
+            title="Review-level evidence keeps the signal grounded."
+            description="The most severe recent reviews are kept close to the KPI layer so teams can inspect the guest language behind the signal."
+          />
+          <div className="mt-6 space-y-3">
+            {recentCriticalReviews.length ? (
+              recentCriticalReviews.map((review) => (
+                <Link
+                  key={review.key}
+                  to={`/reviews?id=${review.reviewId}&expand=true`}
+                  className="block rounded-[20px] border border-[#e5e5e5] bg-white p-4 transition hover:border-black"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <RatingBadge rating={review.rating} compact />
+                    <span className="rounded-full bg-[#fafafa] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#767676]">
+                      {review.productName}
+                    </span>
+                    <span className="rounded-full bg-[#fafafa] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#767676]">
+                      {review.complaintTheme}
+                    </span>
+                    {review.hasImageEvidence ? (
+                      <span className="rounded-full bg-[#ffe5e8] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#E20010]">
+                        Photo
+                      </span>
+                    ) : null}
+                    {hasValue(review.luluResponseText) ? (
+                      <span className="rounded-full bg-[#edf6f0] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#1f6f3e]">
+                        Response
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="mt-3 text-sm font-semibold text-black">{review.title}</p>
+                  <p className="mt-2 text-sm leading-6 text-[#4a4a4a]">
+                    {truncateText(review.reviewText, 150)}
+                  </p>
+                  <p className="mt-2 text-xs text-[#767676]">
+                    {formatShortDate(review.reviewDate)}
+                  </p>
+                </Link>
+              ))
+            ) : (
+              <div className="rounded-[20px] border border-[#e5e5e5] bg-[#fafafa] p-6 text-sm text-[#4a4a4a]">
+                No recent critical reviews found for this selection.
+              </div>
+            )}
           </div>
         </Panel>
       </div>
@@ -467,17 +659,25 @@ export default function Analytics() {
               </tr>
             </thead>
             <tbody>
-              {data.themeRows.map((theme) => (
-                <tr key={theme.slug} className="border-t border-[#f0f0f0]">
-                  <td className="px-5 py-4 font-medium text-[#000000]">{theme.theme}</td>
-                  <td className="px-5 py-4 text-[#4a4a4a]">{theme.totalReviews}</td>
-                  <td className="px-5 py-4 text-[#4a4a4a]">{theme.totalReviewsWithImages}</td>
-                  <td className="px-5 py-4 text-[#4a4a4a]">{theme.oneStarImages}</td>
-                  <td className="px-5 py-4 text-[#4a4a4a]">{theme.twoStarImages}</td>
-                  <td className="px-5 py-4 text-[#4a4a4a]">{theme.threeStarImages}</td>
-                  <td className="px-5 py-4 text-[#4a4a4a]">{theme.share.toFixed(1)}%</td>
+              {data.themeRows.length ? (
+                data.themeRows.map((theme) => (
+                  <tr key={theme.slug} className="border-t border-[#f0f0f0]">
+                    <td className="px-5 py-4 font-medium text-[#000000]">{theme.theme}</td>
+                    <td className="px-5 py-4 text-[#4a4a4a]">{theme.totalReviews}</td>
+                    <td className="px-5 py-4 text-[#4a4a4a]">{theme.totalReviewsWithImages}</td>
+                    <td className="px-5 py-4 text-[#4a4a4a]">{theme.oneStarImages}</td>
+                    <td className="px-5 py-4 text-[#4a4a4a]">{theme.twoStarImages}</td>
+                    <td className="px-5 py-4 text-[#4a4a4a]">{theme.threeStarImages}</td>
+                    <td className="px-5 py-4 text-[#4a4a4a]">{theme.share.toFixed(1)}%</td>
+                  </tr>
+                ))
+              ) : (
+                <tr className="border-t border-[#f0f0f0]">
+                  <td colSpan={7} className="px-5 py-6 text-sm text-[#4a4a4a]">
+                    No category detail is available for the selected period.
+                  </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

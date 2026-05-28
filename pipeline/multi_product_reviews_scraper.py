@@ -115,16 +115,17 @@ def main() -> int:
     write_csv_rows(ALL_REVIEWS_CSV, flat_rows, REVIEW_FIELDNAMES)
     write_json(ALL_REVIEWS_JSON, flat_rows)
 
+    failure_fields = [
+        "product_name",
+        "product_id",
+        "productNameId",
+        "product_url",
+        "category",
+        "error",
+    ]
+    write_csv_rows(SCRAPE_FAILURES_CSV, failures, failure_fields)
+
     if failures:
-        failure_fields = [
-            "product_name",
-            "product_id",
-            "productNameId",
-            "product_url",
-            "category",
-            "error",
-        ]
-        write_csv_rows(SCRAPE_FAILURES_CSV, failures, failure_fields)
         log(f"Logged {len(failures)} product failures to {SCRAPE_FAILURES_CSV}")
 
     log(f"Saved combined review CSV to {ALL_REVIEWS_CSV}")

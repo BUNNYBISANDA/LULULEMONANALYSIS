@@ -6,6 +6,7 @@ import EmptyState from '../components/primitives/EmptyState'
 import Skeleton from '../components/primitives/Skeleton'
 import FilterBar from '../components/filters/FilterBar'
 import DateRangePicker from '../components/filters/DateRangePicker'
+import TimePeriodFilter from '../components/filters/TimePeriodFilter'
 import ImageCard from '../components/gallery/ImageCard'
 import Lightbox from '../components/gallery/Lightbox'
 import { ALL_FILTER_VALUE, LOGO_PATH } from '../data/constants'
@@ -102,7 +103,7 @@ export default function Gallery() {
       <Panel className="p-5">
         <div className="flex flex-wrap items-center gap-3 text-sm text-[#4a4a4a]">
           <span className="rounded-full bg-[#000000] px-4 py-2 text-white">
-            {data.imageItems.length} total images
+            {data.imageItems.length} images in {data.selectedTimePeriod}
           </span>
           {ratingBreakdown.map((item) => (
             <span
@@ -116,6 +117,11 @@ export default function Gallery() {
       </Panel>
 
       <FilterBar>
+        <div className="w-full">
+          <TimePeriodFilter
+            meta={`Selected period: ${data.selectedTimePeriod}. Showing ${data.periodRangeLabel}.`}
+          />
+        </div>
         <div className="grid flex-1 gap-3 xl:grid-cols-[0.7fr_1fr_0.9fr_0.8fr_auto_0.8fr]">
           <label className="flex flex-col gap-1 text-sm text-[#4a4a4a]">
             <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
@@ -208,7 +214,18 @@ export default function Gallery() {
       </FilterBar>
 
       {filteredItems.length === 0 ? (
-        <EmptyState />
+        <EmptyState
+          title={
+            data.imageItems.length === 0
+              ? 'No image-backed reviews found for this selection.'
+              : 'No matching image evidence'
+          }
+          description={
+            data.imageItems.length === 0
+              ? 'Try a broader time period or another product style.'
+              : 'Try adjusting or clearing the gallery filters.'
+          }
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {filteredItems.map((item, index) => {

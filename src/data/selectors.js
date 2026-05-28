@@ -1,6 +1,8 @@
 import {
   ALL_FILTER_VALUE,
+  DEFAULT_TIME_PERIOD,
   LOW_STAR_RATINGS,
+  TIME_PERIOD_OPTIONS,
   businessGroupBlueprints,
   pageMetadata,
   severityPalette,
@@ -17,6 +19,114 @@ export function safeNumber(value) {
 
 export function hasValue(value) {
   return value !== null && value !== undefined && String(value).trim() !== ''
+}
+
+export function parseReviewDate(value) {
+  if (!hasValue(value)) {
+    return null
+  }
+
+  const parsedDate = new Date(value)
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate
+}
+
+export function getReviewTimestamp(record) {
+  return parseReviewDate(record?.reviewDate)?.getTime() ?? null
+}
+
+function getPeriodOption(value) {
+  return (
+    TIME_PERIOD_OPTIONS.find((option) => option.value === value) ||
+    TIME_PERIOD_OPTIONS.find((option) => option.value === DEFAULT_TIME_PERIOD) ||
+    TIME_PERIOD_OPTIONS[0]
+  )
+}
+
+function shiftDateByMonths(date, monthDelta) {
+  const shifted = new Date(date)
+  const originalDay = shifted.getDate()
+
+  shifted.setDate(1)
+  shifted.setMonth(shifted.getMonth() + monthDelta)
+
+  const daysInTargetMonth = new Date(
+    shifted.getFullYear(),
+    shifted.getMonth() + 1,
+    0,
+  ).getDate()
+  shifted.setDate(Math.min(originalDay, daysInTargetMonth))
+
+  return shifted
+}
+
+function findLatestReviewDate(...collections) {
+  const timestamps = collections
+    .flat()
+    .map((record) => getReviewTimestamp(record))
+    .filter((timestamp) => timestamp !== null)
+
+  if (!timestamps.length) {
+    return null
+  }
+
+  return new Date(Math.max(...timestamps))
+}
+
+function formatDateRangeLabel(startDate, endDate) {
+  if (!startDate || !endDate) {
+    return 'No dated reviews'
+  }
+
+  return `${formatShortDate(startDate)} - ${formatShortDate(endDate)}`
+}
+
+function filterByTimePeriod(records = [], selectedTimePeriod = DEFAULT_TIME_PERIOD, anchorDate) {
+  if (!anchorDate) {
+    return []
+  }
+
+  const option = getPeriodOption(selectedTimePeriod)
+  const startDate = shiftDateByMonths(anchorDate, -option.months)
+  const startTime = startDate.getTime()
+  const endTime = anchorDate.getTime()
+
+  return records.filter((record) => {
+    const timestamp = getReviewTimestamp(record)
+    return timestamp !== null && timestamp >= startTime && timestamp <= endTime
+  })
+}
+
+function getReviewEvidenceKey(record) {
+  return `${record?.productId || 'unknown'}:${record?.reviewId || record?.key || 'unknown'}`
+}
+
+function buildImageCountByReview(images = []) {
+  const counts = new Map()
+
+  images.forEach((image) => {
+    const key = getReviewEvidenceKey(image)
+    counts.set(key, (counts.get(key) || 0) + 1)
+  })
+
+  return counts
+}
+
+function attachImageEvidence(reviews = [], images = []) {
+  const imageCountByReview = buildImageCountByReview(images)
+
+  return reviews.map((review) => {
+    const imageEvidenceCount = imageCountByReview.get(getReviewEvidenceKey(review)) || 0
+    const embeddedPhotoCount = Math.max(
+      safeNumber(review.photoCount),
+      Array.isArray(review.imageUrls) ? review.imageUrls.length : 0,
+    )
+
+    return {
+      ...review,
+      imageEvidenceCount,
+      hasImageEvidence: imageEvidenceCount > 0 || embeddedPhotoCount > 0,
+    }
+  })
 }
 
 export function normalizeTruth(value) {
@@ -383,10 +493,10 @@ function buildThemeRows(categoryRows = [], reviews = [], images = []) {
     if (!imageReviewSets.has(item.complaintTheme)) {
       imageReviewSets.set(item.complaintTheme, new Set())
     }
-    imageReviewSets.get(item.complaintTheme).add(item.reviewId)
+    imageReviewSets.get(item.complaintTheme).add(getReviewEvidenceKey(item))
   })
 
-  const totalImageBackedReviews = new Set(images.map((item) => item.reviewId)).size
+  const totalImageBackedReviews = new Set(images.map((item) => getReviewEvidenceKey(item))).size
 
   const rows = [...themeSet]
     .filter(Boolean)
@@ -473,10 +583,10 @@ export function getTopImageBackedTheme(images = []) {
       grouped.set(image.complaintTheme, new Set())
     }
 
-    grouped.get(image.complaintTheme).add(image.reviewId)
+    grouped.get(image.complaintTheme).add(getReviewEvidenceKey(image))
   })
 
-  const totalImageBackedReviews = new Set(images.map((image) => image.reviewId)).size
+  const totalImageBackedReviews = new Set(images.map((image) => getReviewEvidenceKey(image))).size
   const [theme, reviewSet] =
     [...grouped.entries()].sort((left, right) => right[1].size - left[1].size)[0] || []
 
@@ -656,7 +766,7 @@ export function buildResponseMetrics(reviews = []) {
 }
 
 export function buildPhotoBackedStats(reviews = [], images = []) {
-  const imageBackedReviewCount = new Set(images.map((image) => image.reviewId)).size
+  const imageBackedReviewCount = new Set(images.map((image) => getReviewEvidenceKey(image))).size
   return {
     count: imageBackedReviewCount,
     share: reviews.length ? (imageBackedReviewCount / reviews.length) * 100 : 0,
@@ -1045,8 +1155,101 @@ export function getGallerySizeOptions(items = []) {
   )
 }
 
-function buildProductComparisonRows(productSummaryRows = []) {
-  return [...productSummaryRows].sort((left, right) => right.lowStarReviews - left.lowStarReviews)
+function getAverageRating(reviews = []) {
+  if (!reviews.length) {
+    return 0
+  }
+
+  const ratingSum = reviews.reduce((sum, review) => sum + review.rating, 0)
+  return Number((ratingSum / reviews.length).toFixed(2))
+}
+
+function buildProductComparisonRows(
+  products = [],
+  productSummaryRows = [],
+  reviews = [],
+  images = [],
+) {
+  const productMap = new Map()
+
+  products.forEach((product) => {
+    if (!product.productId) {
+      return
+    }
+
+    productMap.set(product.productId, product)
+  })
+
+  productSummaryRows.forEach((summary) => {
+    if (!summary.productId || productMap.has(summary.productId)) {
+      return
+    }
+
+    productMap.set(summary.productId, {
+      productId: summary.productId,
+      productName: summary.productName,
+      productNameId: summary.productNameId,
+      productUrl: summary.productUrl,
+      category: summary.category,
+    })
+  })
+
+  reviews.forEach((review) => {
+    if (!review.productId || productMap.has(review.productId)) {
+      return
+    }
+
+    productMap.set(review.productId, {
+      productId: review.productId,
+      productName: review.productName,
+      productNameId: review.productNameId,
+      productUrl: review.productUrl,
+      category: review.category,
+    })
+  })
+
+  return [...productMap.values()]
+    .map((product) => {
+      const productReviews = reviews.filter((review) => review.productId === product.productId)
+      const productImages = images.filter((image) => image.productId === product.productId)
+      const historicalSummary =
+        productSummaryRows.find((row) => row.productId === product.productId) || null
+      const topTheme = getTopComplaintTheme(productReviews)
+      const imageBackedReviewKeys = new Set(
+        productImages.map((image) => getReviewEvidenceKey(image)),
+      )
+      const oneStarReviews = productReviews.filter((review) => review.rating === 1).length
+      const twoStarReviews = productReviews.filter((review) => review.rating === 2).length
+      const threeStarReviews = productReviews.filter((review) => review.rating === 3).length
+      const hasHistoricalData = (historicalSummary?.lowStarReviews || 0) > 0
+
+      return {
+        ...product,
+        totalReviews: productReviews.length,
+        lowStarReviews: productReviews.length,
+        oneStarReviews,
+        twoStarReviews,
+        threeStarReviews,
+        reviewsWithImages: imageBackedReviewKeys.size,
+        totalImages: productImages.length,
+        averageRating: getAverageRating(productReviews),
+        topComplaintTheme: topTheme?.theme || '',
+        topComplaintShare: topTheme?.share || 0,
+        historicalLowStarReviews: historicalSummary?.lowStarReviews || 0,
+        hasRecentActivity: productReviews.length > 0,
+        statusMessage:
+          productReviews.length === 0 && hasHistoricalData
+            ? 'Historical data available. No recent VOG activity in the selected period.'
+            : '',
+      }
+    })
+    .sort((left, right) => {
+      if (right.lowStarReviews !== left.lowStarReviews) {
+        return right.lowStarReviews - left.lowStarReviews
+      }
+
+      return left.productName.localeCompare(right.productName)
+    })
 }
 
 export function buildDashboardData(
@@ -1058,15 +1261,28 @@ export function buildDashboardData(
     productSummary = [],
   },
   selectedProductId = 'all',
+  selectedTimePeriod = DEFAULT_TIME_PERIOD,
 ) {
   const normalizedProducts = normalizeProducts(products)
   const normalizedReviews = normalizeReviews(reviews)
   const normalizedImages = normalizeImages(images)
   const normalizedCategory = normalizeCategorySummary(category)
   const normalizedProductSummary = normalizeProductSummaries(productSummary)
+  const anchorDate = findLatestReviewDate(normalizedReviews, normalizedImages)
+  const periodOption = getPeriodOption(selectedTimePeriod)
+  const periodStartDate = anchorDate ? shiftDateByMonths(anchorDate, -periodOption.months) : null
+  const periodReviews = filterByTimePeriod(
+    normalizedReviews,
+    selectedTimePeriod,
+    anchorDate,
+  )
+  const periodImages = filterByTimePeriod(normalizedImages, selectedTimePeriod, anchorDate)
 
-  const filteredReviews = filterByProductId(normalizedReviews, selectedProductId)
-  const filteredImages = filterByProductId(normalizedImages, selectedProductId)
+  const filteredReviews = attachImageEvidence(
+    filterByProductId(periodReviews, selectedProductId),
+    filterByProductId(periodImages, selectedProductId),
+  )
+  const filteredImages = filterByProductId(periodImages, selectedProductId)
   const filteredCategory = filterByProductId(normalizedCategory, selectedProductId)
   const filteredProductSummary = filterByProductId(normalizedProductSummary, selectedProductId)
 
@@ -1077,10 +1293,10 @@ export function buildDashboardData(
   const selectedProductName = selectedProduct?.productName || 'All Products'
   const dashboardTitle =
     selectedProductId === 'all'
-      ? 'All Products Review Intelligence'
-      : `${selectedProductName} Review Intelligence`
+      ? 'Voice of Guest Intelligence'
+      : `${selectedProductName} Voice of Guest Intelligence`
 
-  const themeRows = buildThemeRows(filteredCategory, filteredReviews, filteredImages)
+  const themeRows = buildThemeRows([], filteredReviews, filteredImages)
   const groupRows = buildBusinessGroups(themeRows)
   const monthlyTrend = buildMonthlyTrendSeries(filteredReviews)
   const rollingAverageSeries = buildRollingAverageSeries(monthlyTrend)
@@ -1128,18 +1344,31 @@ export function buildDashboardData(
       }
     : null
 
-  const comparisonRows = buildProductComparisonRows(normalizedProductSummary)
-  const comparisonBarData = comparisonRows.map((row) => ({
+  const comparisonRows = buildProductComparisonRows(
+    normalizedProducts,
+    normalizedProductSummary,
+    periodReviews,
+    periodImages,
+  )
+  const comparisonBarData = comparisonRows.filter((row) => row.lowStarReviews > 0).map((row) => ({
     productName: row.productName,
     lowStarReviews: row.lowStarReviews,
     totalReviews: row.totalReviews,
     topComplaintTheme: row.topComplaintTheme,
     topComplaintShare: row.topComplaintShare,
   }))
+  const averageRating = getAverageRating(filteredReviews)
 
   return {
     products: normalizedProducts,
     selectedProductId,
+    selectedTimePeriod: periodOption.value,
+    periodMonths: periodOption.months,
+    anchorDate,
+    anchorDateLabel: anchorDate ? formatShortDate(anchorDate) : 'Unknown',
+    periodStartDate,
+    periodStartLabel: periodStartDate ? formatShortDate(periodStartDate) : 'Unknown',
+    periodRangeLabel: formatDateRangeLabel(periodStartDate, anchorDate),
     selectedProduct,
     selectedProductName,
     dashboardTitle,
@@ -1161,6 +1390,7 @@ export function buildDashboardData(
     themeShareByMonth,
     responseMetrics,
     photoBackedStats,
+    averageRating,
     fitFeedbackDistribution,
     sizeDistribution,
     sizeDeltaPoints,

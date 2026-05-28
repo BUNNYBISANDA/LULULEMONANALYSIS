@@ -1,10 +1,11 @@
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { LOGO_PATH, navRoutes } from '../../data/constants'
 import { useProductFilter } from '../../context/ProductFilterContext'
 import ProductStyleSelect from '../filters/ProductStyleSelect'
 
 export default function MobileNav({ open, onClose, onOpenSearch }) {
+  const location = useLocation()
   const {
     dashboardTitle,
     loadingProducts,
@@ -12,6 +13,7 @@ export default function MobileNav({ open, onClose, onOpenSearch }) {
     selectedProductId,
     setSelectedProductId,
   } = useProductFilter()
+  const isVisionPage = location.pathname === '/'
 
   if (!open) {
     return null
@@ -31,7 +33,7 @@ export default function MobileNav({ open, onClose, onOpenSearch }) {
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
               Navigation
             </p>
-            <Link to="/analytics" onClick={onClose} className="mt-2 flex items-center gap-3">
+            <Link to="/" onClick={onClose} className="mt-2 flex items-center gap-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e5e5e5] bg-white">
                 <img
                   src={LOGO_PATH}
@@ -39,7 +41,9 @@ export default function MobileNav({ open, onClose, onOpenSearch }) {
                   className="h-8 w-8 rounded-full object-contain"
                 />
               </span>
-              <span className="brand-mark text-xl text-[#000000]">lululemon</span>
+              <span className="text-[13px] font-bold uppercase tracking-[0.18em] text-[#000000]">
+                LULULEMON
+              </span>
             </Link>
             <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.18em] text-[#767676]">
               {dashboardTitle}
@@ -66,13 +70,15 @@ export default function MobileNav({ open, onClose, onOpenSearch }) {
           Search analytics, reviews, and gallery
         </button>
 
-        <ProductStyleSelect
-          value={selectedProductId}
-          options={productOptions}
-          onChange={setSelectedProductId}
-          disabled={loadingProducts}
-          className="mt-5"
-        />
+        {!isVisionPage ? (
+          <ProductStyleSelect
+            value={selectedProductId}
+            options={productOptions}
+            onChange={setSelectedProductId}
+            disabled={loadingProducts}
+            className="mt-5"
+          />
+        ) : null}
 
         <nav className="mt-6 flex flex-col gap-2">
           {navRoutes.map((route) => {
