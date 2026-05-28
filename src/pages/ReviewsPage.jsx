@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ChevronDown, ChevronUp, ExternalLink, Search } from 'lucide-react'
+import { ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
 import Panel from '../components/primitives/Panel'
 import SectionHeader from '../components/primitives/SectionHeader'
 import EmptyState from '../components/primitives/EmptyState'
@@ -15,7 +15,6 @@ import {
   filterReviews,
   formatShortDate,
   hasValue,
-  highlightMatch,
   sortReviews,
   truncateText,
 } from '../data/selectors'
@@ -39,18 +38,6 @@ const columnDefinitions = [
   { key: 'response', label: 'Lululemon Response' },
 ]
 
-function HighlightedText({ text, query }) {
-  return highlightMatch(text, query).map((part, index) =>
-    part.match ? (
-      <mark key={`${part.text}-${index}`} className="rounded bg-[#ffe5e8] px-0.5 text-[#000000]">
-        {part.text}
-      </mark>
-    ) : (
-      <span key={`${part.text}-${index}`}>{part.text}</span>
-    ),
-  )
-}
-
 export default function Reviews() {
   const { selectedProductId, selectedProductName, selectedTimePeriod } = useProductFilter()
   const { data, loading, error } = useDashboardDataset(true)
@@ -60,7 +47,6 @@ export default function Reviews() {
     verified: ALL_FILTER_VALUE,
     from: '',
     to: '',
-    query: '',
     sort: 'newest',
   })
   const [searchParams] = useSearchParams()
@@ -182,7 +168,7 @@ export default function Reviews() {
         <SectionHeader
           eyebrow="Reviews Explorer"
           title="Browse the full low-star review set."
-          description={`Search, filter, sort, and expand low-star reviews for ${
+          description={`Filter, sort, and expand low-star reviews for ${
             selectedProductId === 'all' ? 'all loaded lululemon product styles' : selectedProductName
           }, with image evidence and brand-response context attached when available.`}
           className="mt-4"
@@ -204,7 +190,7 @@ export default function Reviews() {
             meta={`Selected period: ${data.selectedTimePeriod}. Showing ${data.periodRangeLabel}.`}
           />
         </div>
-        <div className="grid flex-1 gap-3 xl:grid-cols-[0.8fr_1.3fr_0.8fr_auto_1fr_0.8fr]">
+        <div className="grid flex-1 gap-3 xl:grid-cols-[0.8fr_1.3fr_0.8fr_auto_0.8fr]">
           <label className="flex flex-col gap-1 text-sm text-[#4a4a4a]">
             <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
               Rating
@@ -240,20 +226,6 @@ export default function Reviews() {
             </select>
           </label>
           <DateRangePicker from={filters.from} to={filters.to} onChange={updateFilter} />
-          <label className="flex flex-col gap-1 text-sm text-[#4a4a4a]">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
-              Search
-            </span>
-            <div className="flex items-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-2">
-              <Search size={15} className="text-[#767676]" />
-              <input
-                value={filters.query}
-                onChange={(event) => updateFilter('query', event.target.value)}
-                placeholder="Title, text, review ID, or theme"
-                className="w-full border-none bg-transparent text-sm text-[#000000] outline-none placeholder:text-[#a8a8a8]"
-              />
-            </div>
-          </label>
           <label className="flex flex-col gap-1 text-sm text-[#4a4a4a]">
             <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
               Sort
@@ -390,18 +362,12 @@ export default function Reviews() {
                         ) : null}
                         {visibleColumns.title ? (
                           <td className="px-5 py-4 font-medium text-[#000000]">
-                            <HighlightedText
-                              text={review.title || 'Untitled review'}
-                              query={filters.query}
-                            />
+                            {review.title || 'Untitled review'}
                           </td>
                         ) : null}
                         {visibleColumns.text ? (
                           <td className="max-w-xl px-5 py-4 text-sm leading-7 text-[#4a4a4a]">
-                            <HighlightedText
-                              text={truncateText(review.reviewText, 160)}
-                              query={filters.query}
-                            />
+                            {truncateText(review.reviewText, 160)}
                           </td>
                         ) : null}
                         {visibleColumns.fit ? (

@@ -1,10 +1,10 @@
 import {
+  BarChart3,
   CircleDollarSign,
   Eye,
   Headphones,
   Image as ImageIcon,
   MessageSquareQuote,
-  PackageSearch,
   Ruler,
   ShieldCheck,
 } from 'lucide-react'
@@ -320,7 +320,7 @@ export const insightRecommendations = [
 
 export const pageMetadata = {
   vision: { title: 'Vision', path: '/', icon: Eye },
-  analytics: { title: 'Analytics', path: '/analytics', icon: PackageSearch },
+  analytics: { title: 'Analytics', path: '/analytics', icon: BarChart3 },
   reviews: { title: 'Reviews Explorer', path: '/reviews', icon: MessageSquareQuote },
   gallery: { title: 'Image Gallery', path: '/gallery', icon: ImageIcon },
 }

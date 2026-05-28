@@ -693,7 +693,7 @@ export default function Analytics() {
               Browse all reviews
             </h3>
             <p className="mt-3 inline-flex items-center gap-2 text-sm text-[#4a4a4a]">
-              Open the searchable review explorer
+              Open the review explorer
               <ArrowRight size={15} />
             </p>
           </Panel>

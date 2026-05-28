@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react'
+import { Eye } from 'lucide-react'
 import RatingBadge from '../primitives/RatingBadge'
 import Skeleton from '../primitives/Skeleton'
 
@@ -30,7 +30,7 @@ export default function ImageCard({ item, extraCount = 0, onClick }) {
             <p className="mt-1 text-xs text-white/70">{item.complaintTheme}</p>
           </div>
           <div className="rounded-full bg-white/15 p-2">
-            <Search size={15} />
+            <Eye size={15} />
           </div>
         </div>
       </div>
