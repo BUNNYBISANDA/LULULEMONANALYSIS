@@ -1,10 +1,10 @@
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { Menu, Search } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { LOGO_PATH, navRoutes } from '../../data/constants'
 import { useProductFilter } from '../../context/ProductFilterContext'
 import ProductStyleSelect from '../filters/ProductStyleSelect'
 
-export default function Header({ onOpenSearch, onOpenMobileNav }) {
+export default function Header({ onOpenMobileNav }) {
   const location = useLocation()
   const {
     dashboardTitle,
@@ -66,28 +66,9 @@ export default function Header({ onOpenSearch, onOpenMobileNav }) {
               disabled={loadingProducts}
             />
           ) : null}
-          <button
-            type="button"
-            onClick={onOpenSearch}
-            className="flex items-center gap-3 rounded-full border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#4a4a4a] transition hover:border-black hover:text-black"
-          >
-            <Search size={15} />
-            <span>Search</span>
-            <span className="rounded-md bg-[#fafafa] px-2 py-1 text-[11px] text-[#767676]">
-              Ctrl K
-            </span>
-          </button>
         </div>
 
         <div className="col-start-3 flex items-center justify-self-end gap-2 md:hidden">
-          <button
-            type="button"
-            onClick={onOpenSearch}
-            className="rounded-xl border border-[#e5e5e5] bg-white p-2 text-black"
-            aria-label="Open search"
-          >
-            <Search size={18} />
-          </button>
           <button
             type="button"
             onClick={onOpenMobileNav}

@@ -4,7 +4,7 @@ import { LOGO_PATH, navRoutes } from '../../data/constants'
 import { useProductFilter } from '../../context/ProductFilterContext'
 import ProductStyleSelect from '../filters/ProductStyleSelect'
 
-export default function MobileNav({ open, onClose, onOpenSearch }) {
+export default function MobileNav({ open, onClose }) {
   const location = useLocation()
   const {
     dashboardTitle,
@@ -58,17 +58,6 @@ export default function MobileNav({ open, onClose, onOpenSearch }) {
             <X size={18} />
           </button>
         </div>
-
-        <button
-          type="button"
-          onClick={() => {
-            onOpenSearch()
-            onClose()
-          }}
-          className="mt-5 rounded-full border border-[#e5e5e5] bg-white px-4 py-3 text-left text-sm text-[#4a4a4a]"
-        >
-          Search analytics, reviews, and gallery
-        </button>
 
         {!isVisionPage ? (
           <ProductStyleSelect
