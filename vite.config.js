@@ -4,6 +4,6 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
-  base: command === 'serve' ? '/' : '/LululemonAnalytics/',
+  base: command === 'serve' ? '/' : '/lululemonvog/',
   plugins: [react(), tailwindcss()],
 }))
