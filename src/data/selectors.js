@@ -1836,7 +1836,26 @@ export function buildProductionEvidenceWall(reviews = [], images = [], limit = 1
     .slice(0, limit)
 }
 
-export function buildQualityInsightCategories(reviews = []) {
+function impactLevelForShare(sharePercent) {
+  if (sharePercent >= 20) return 'High'
+  if (sharePercent >= 8) return 'Medium'
+  return 'Low'
+}
+
+function evidenceStrengthForRatio(ratio) {
+  if (ratio >= 0.4) return 'High'
+  if (ratio > 0) return 'Medium'
+  return 'Low'
+}
+
+function priorityForLevels(impactLevel, evidenceStrength) {
+  if (impactLevel === 'High' && evidenceStrength === 'High') return 'Critical'
+  if (impactLevel === 'Low') return 'Monitor'
+  return 'High'
+}
+
+export function buildQualityInsightCategories(reviews = [], options = {}) {
+  const { evidenceLimit = 8 } = options
   const officialGroups = officialDefectGroups.filter((group) => group.isCertified)
 
   const reviewsByGroup = new Map(officialGroups.map((group) => [group.key, []]))
@@ -1860,24 +1879,41 @@ export function buildQualityInsightCategories(reviews = []) {
       const groupReviews = reviewsByGroup.get(group.key) || []
       const count = groupReviews.length
 
-      const similaritySum = groupReviews.reduce((sum, review) => sum + (review.similarityScore || 0), 0)
-      const averageSimilarity = count ? Number(((similaritySum / count) * 100).toFixed(1)) : 0
-
       const imageTotal = groupReviews.reduce((sum, review) => sum + (review.imageUrls?.length || 0), 0)
       const imageBackedReviewCount = groupReviews.filter((review) => review.hasImageEvidence).length
+      const sharePercent = grandTotal ? Number(((count / grandTotal) * 100).toFixed(1)) : 0
+      const impactLevel = count ? impactLevelForShare(sharePercent) : 'Low'
+      const evidenceStrength = evidenceStrengthForRatio(count ? imageBackedReviewCount / count : 0)
+
+      const evidenceImages = groupReviews
+        .flatMap((review) =>
+          (review.imageUrls || []).map((url) => ({
+            url,
+            key: `${review.key}-${url}`,
+            reviewTitle: review.title,
+            reviewText: review.reviewText,
+            rating: review.rating,
+          })),
+        )
+        .slice(0, evidenceLimit)
 
       return {
         key: group.key,
         label: group.label,
         summary: group.customerSummary || '',
         icon: group.icon,
+        owner: group.owner,
+        recommendedAction: group.preventionAction,
+        issueLabel: group.actionIssueLabel,
         count,
         imageCount: imageTotal,
         imageBackedReviewCount,
-        sharePercent: grandTotal ? Number(((count / grandTotal) * 100).toFixed(1)) : 0,
+        sharePercent,
         barWidth: maxCount ? Math.max((count / maxCount) * 100, count > 0 ? 4 : 0) : 0,
-        averageSimilarity,
-        officialSource: 'master_defect.csv',
+        impactLevel,
+        evidenceStrength,
+        priority: count ? priorityForLevels(impactLevel, evidenceStrength) : 'Monitor',
+        evidenceImages,
       }
     })
     .sort((left, right) => right.count - left.count)
