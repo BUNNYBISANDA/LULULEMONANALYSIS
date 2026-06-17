@@ -20,7 +20,7 @@ export default function MobileNav({ open, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 md:hidden">
+    <div className="fixed inset-0 z-50 lg:hidden">
       <button
         type="button"
         className="absolute inset-0 bg-black/35"

@@ -1,12 +1,19 @@
 import {
+  Ban,
   BarChart3,
   CircleDollarSign,
+  Droplet,
   Eye,
   Headphones,
   Image as ImageIcon,
+  Layers,
+  Link2,
   MessageSquareQuote,
   Ruler,
+  Scissors,
   ShieldCheck,
+  Sparkles,
+  Workflow,
 } from 'lucide-react'
 
 export const BASE_PATH = import.meta.env.BASE_URL
@@ -52,6 +59,7 @@ export const navRoutes = [
   { label: 'Analytics', to: '/analytics' },
   { label: 'Reviews', to: '/reviews' },
   { label: 'Gallery', to: '/gallery' },
+  { label: 'Guest-to-Factory Intelligence', to: '/vp-vision' },
 ]
 
 export const themeKeywordMap = {
@@ -207,6 +215,195 @@ export const themeDetailCopy = {
   },
 }
 
+export const defectCategoryMap = {
+  'Stitching & Construction': {
+    label: 'Stitching / Sewing',
+    issueLabel: 'Stitching seam opening',
+    operationArea: 'Sewing Line',
+    recommendedAction: 'Review seam allowance and sewing method.',
+    owner: 'Production Engineering',
+    operationRelated: true,
+  },
+  'Zipper Issues': {
+    label: 'Zipper',
+    issueLabel: 'Zipper failure',
+    operationArea: 'Attachment Operation',
+    recommendedAction: 'Check zipper attachment and puller quality.',
+    owner: 'QA + Supplier',
+    operationRelated: true,
+  },
+  'Fabric & Material Quality': {
+    label: 'Fabric Quality',
+    issueLabel: 'Fabric pilling',
+    operationArea: 'Fabric Handling / Material',
+    recommendedAction: 'Review fabric inspection and handling.',
+    owner: 'Development',
+    operationRelated: true,
+  },
+  'Color & Product Description': {
+    label: 'Color Fading',
+    issueLabel: 'Color fading after wash',
+    operationArea: 'Dye / Wash / Material',
+    recommendedAction: 'Check colorfastness feedback.',
+    owner: 'Development',
+    operationRelated: true,
+  },
+  'Sizing & Fit': {
+    label: 'Sizing / Fit',
+    issueLabel: 'Sizing inconsistency',
+    operationArea: 'Pattern / Measurement',
+    recommendedAction: 'Review pattern grading and size consistency.',
+    owner: 'Technical Team',
+    operationRelated: true,
+  },
+  'Customer Service': {
+    label: 'Customer Service',
+    issueLabel: 'Service recovery delay',
+    operationArea: null,
+    recommendedAction: 'Improve recovery playbooks for returns and refunds.',
+    owner: 'Customer Experience',
+    operationRelated: false,
+  },
+}
+
+export const defaultDefectCategory = {
+  label: 'Other',
+  issueLabel: 'Emerging complaint pattern',
+  operationArea: null,
+  recommendedAction: 'Monitor for emerging complaint patterns.',
+  owner: 'Quality Team',
+  operationRelated: false,
+}
+
+export const officialDefectGroups = [
+  {
+    key: 'Cleanliness',
+    label: 'Cleanliness',
+    operationArea: 'Final Inspection / Packing QC',
+    heatmapLabel: 'Cleanliness',
+    owner: 'Final QA & Packing Team',
+    preventionAction:
+      'Reinforce pre-pack visual inspection for stains, odor, and surface cleanliness before folding and bagging.',
+    qaChecklist: [
+      'Pre-pack visual inspection',
+      'Odor check',
+      'Stain / spot check',
+      'Packing area cleanliness audit',
+    ],
+    actionIssueLabel: 'Stains, dirt, or odor on finished garment',
+    customerSummary: 'Stains, odor, or cleanliness concerns noticed on arrival.',
+    icon: Droplet,
+    isProduction: true,
+    isCertified: true,
+  },
+  {
+    key: 'Construction',
+    label: 'Construction',
+    operationArea: 'Sewing Line / Seam & Trim Attachment',
+    heatmapLabel: 'Construction',
+    owner: 'Sewing Line & Production Engineering',
+    preventionAction:
+      'Audit seam strength, stitch tension, SPI consistency, and zipper / trim attachment on the sewing line.',
+    qaChecklist: [
+      'Seam strength test',
+      'Stitch tension check',
+      'Zipper function test',
+      'End-line inspection',
+    ],
+    actionIssueLabel: 'Seam, stitching, or zipper / trim defect',
+    customerSummary: 'Stitching, seams, and zipper construction issues.',
+    icon: Scissors,
+    isProduction: true,
+    isCertified: true,
+  },
+  {
+    key: 'Embellishment',
+    label: 'Embellishment',
+    operationArea: 'Embellishment (Print & Embroidery)',
+    heatmapLabel: 'Embellishment',
+    owner: 'Embellishment Department',
+    preventionAction:
+      'Calibrate embroidery registration and print alignment; add an embellishment-stage QC checkpoint.',
+    qaChecklist: ['Embroidery registration check', 'Print alignment audit', 'Color / thread match review'],
+    actionIssueLabel: 'Embroidery or print embellishment defect',
+    customerSummary: 'Print, embroidery, and decorative detail defects.',
+    icon: Sparkles,
+    isProduction: true,
+    isCertified: true,
+  },
+  {
+    key: 'Material',
+    label: 'Material',
+    operationArea: 'Fabric Inspection / Incoming Material QA',
+    heatmapLabel: 'Material',
+    owner: 'Fabric & Materials QA',
+    preventionAction:
+      'Tighten incoming fabric inspection (4-point system) and validate supplier material certificates.',
+    qaChecklist: ['4-point fabric inspection', 'Pilling / abrasion test', 'Supplier material certificate audit'],
+    actionIssueLabel: 'Fabric or material quality defect',
+    customerSummary: 'Fabric feel, durability, and material performance concerns.',
+    icon: Layers,
+    isProduction: true,
+    isCertified: true,
+  },
+  {
+    key: 'Measurements',
+    label: 'Measurements',
+    operationArea: 'Pattern & Cutting',
+    heatmapLabel: 'Measurements',
+    owner: 'Pattern Engineering Team',
+    preventionAction: 'Recheck pattern grading and cutting tolerances against the approved spec sheet.',
+    qaChecklist: ['Pattern grading review', 'In-line measurement check', 'Size consistency audit'],
+    actionIssueLabel: 'Measurement out of tolerance',
+    customerSummary: 'Sizing and fit inconsistencies compared to expected garment measurements.',
+    icon: Ruler,
+    isProduction: true,
+    isCertified: true,
+  },
+  {
+    key: 'Trim',
+    label: 'Trim',
+    operationArea: 'Trim & Accessories Attachment',
+    heatmapLabel: 'Trim',
+    owner: 'Trim Attachment Team',
+    preventionAction:
+      'Verify trim component specs (labels, tape, buttons, hardware) against approved supplier samples.',
+    qaChecklist: ['Trim component spec check', 'Supplier sample comparison', 'Attachment strength test'],
+    actionIssueLabel: 'Trim or accessory attachment defect',
+    customerSummary: 'Issues with labels, tape, buttons, and other attached components.',
+    icon: Link2,
+    isProduction: true,
+    isCertified: true,
+  },
+  {
+    key: 'Unclassified',
+    label: 'Unclassified',
+    operationArea: 'Not yet matched to an official defect code',
+    heatmapLabel: 'Unclassified',
+    owner: 'Needs Manual Review',
+    preventionAction:
+      'Manually review this complaint — no official defect code cleared the similarity threshold.',
+    qaChecklist: [],
+    actionIssueLabel: 'Unclassified guest complaint',
+    icon: ShieldCheck,
+    isProduction: true,
+    isCertified: false,
+  },
+  {
+    key: 'Non-Production',
+    label: 'Non-Production',
+    operationArea: 'Not factory actionable',
+    heatmapLabel: 'Non-Production',
+    owner: 'Non-production',
+    preventionAction: 'Route to customer experience or merchandising — no factory action required.',
+    qaChecklist: [],
+    actionIssueLabel: 'Non-production complaint',
+    icon: Ban,
+    isProduction: false,
+    isCertified: false,
+  },
+]
+
 export const businessGroupBlueprints = [
   {
     slug: 'product-quality',
@@ -323,4 +520,5 @@ export const pageMetadata = {
   analytics: { title: 'Analytics', path: '/analytics', icon: BarChart3 },
   reviews: { title: 'Reviews Explorer', path: '/reviews', icon: MessageSquareQuote },
   gallery: { title: 'Image Gallery', path: '/gallery', icon: ImageIcon },
+  vpVision: { title: 'Guest-to-Factory Intelligence', path: '/vp-vision', icon: Workflow },
 }

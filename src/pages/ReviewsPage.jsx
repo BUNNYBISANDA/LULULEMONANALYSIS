@@ -6,6 +6,7 @@ import SectionHeader from '../components/primitives/SectionHeader'
 import EmptyState from '../components/primitives/EmptyState'
 import Skeleton from '../components/primitives/Skeleton'
 import RatingBadge from '../components/primitives/RatingBadge'
+import ImageLightbox from '../components/ImageLightbox'
 import FilterBar from '../components/filters/FilterBar'
 import ThemeMultiSelect from '../components/filters/ThemeMultiSelect'
 import DateRangePicker from '../components/filters/DateRangePicker'
@@ -53,6 +54,7 @@ export default function Reviews() {
   const [expandedIds, setExpandedIds] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const [lightboxImage, setLightboxImage] = useState(null)
   const productChangeRef = useRef(false)
   const [visibleColumns, setVisibleColumns] = useState(
     Object.fromEntries(columnDefinitions.map((column) => [column.key, true])),
@@ -451,11 +453,12 @@ export default function Reviews() {
                                     </p>
                                     <div className="mt-3 grid grid-cols-3 gap-2">
                                       {review.imageUrls.slice(0, 6).map((url) => (
-                                        <a
+                                        <button
                                           key={url}
-                                          href={url}
-                                          target="_blank"
-                                          rel="noreferrer"
+                                          type="button"
+                                          onClick={() =>
+                                            setLightboxImage({ url, alt: review.title })
+                                          }
                                           className="overflow-hidden rounded-2xl bg-[#f5f5f5]"
                                         >
                                           <img
@@ -464,18 +467,22 @@ export default function Reviews() {
                                             loading="lazy"
                                             className="aspect-square h-full w-full object-cover"
                                           />
-                                        </a>
+                                        </button>
                                       ))}
                                     </div>
-                                    <a
-                                      href={review.imageUrls[0]}
-                                      target="_blank"
-                                      rel="noreferrer"
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setLightboxImage({
+                                          url: review.imageUrls[0],
+                                          alt: review.title,
+                                        })
+                                      }
                                       className="mt-3 inline-flex items-center gap-1 text-sm text-[#767676] hover:text-[#000000]"
                                     >
                                       Open image
                                       <ExternalLink size={14} />
-                                    </a>
+                                    </button>
                                   </div>
                                 ) : null}
                               </div>
@@ -510,6 +517,13 @@ export default function Reviews() {
           </button>
         </div>
       </Panel>
+
+      <ImageLightbox
+        imageUrl={lightboxImage?.url}
+        alt={lightboxImage?.alt}
+        isOpen={Boolean(lightboxImage)}
+        onClose={() => setLightboxImage(null)}
+      />
     </div>
   )
 }

@@ -29,13 +29,13 @@ export default function Header({ onOpenMobileNav }) {
           <span className="text-[13px] font-bold uppercase tracking-[0.18em] text-black">
             LULULEMON
           </span>
-          <span className="hidden h-4 w-px bg-[#e5e5e5] md:block" />
-          <span className="hidden text-[11px] font-medium uppercase tracking-[0.18em] text-[#767676] md:block">
+          <span className="hidden h-4 w-px bg-[#e5e5e5] xl:block" />
+          <span className="hidden text-[11px] font-medium uppercase tracking-[0.18em] text-[#767676] xl:block">
             {dashboardTitle}
           </span>
         </Link>
 
-        <nav className="hidden min-w-0 items-center justify-center gap-6 md:flex">
+        <nav className="hidden min-w-0 items-center justify-center gap-2 lg:flex xl:gap-4">
           {navRoutes.map((route) => {
             return (
               <NavLink
@@ -56,7 +56,7 @@ export default function Header({ onOpenMobileNav }) {
           })}
         </nav>
 
-        <div className="hidden items-center justify-self-end gap-2 md:flex">
+        <div className="hidden items-center justify-self-end gap-2 lg:flex">
           {!isVisionPage ? (
             <ProductStyleSelect
               compact
@@ -68,7 +68,7 @@ export default function Header({ onOpenMobileNav }) {
           ) : null}
         </div>
 
-        <div className="col-start-3 flex items-center justify-self-end gap-2 md:hidden">
+        <div className="col-start-3 flex items-center justify-self-end gap-2 lg:hidden">
           <button
             type="button"
             onClick={onOpenMobileNav}

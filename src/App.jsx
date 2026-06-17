@@ -5,6 +5,8 @@ import VisionPage from './pages/VisionPage.jsx'
 import AnalyticsPage from './pages/AnalyticsPage.jsx'
 import ReviewsPage from './pages/ReviewsPage.jsx'
 import GalleryPage from './pages/GalleryPage.jsx'
+import VPVisionPage from './pages/VPVisionPage.jsx'
+import VPAnalyticsPage from './pages/VPAnalyticsPage.jsx'
 import { ProductFilterProvider } from './context/ProductFilterContext.jsx'
 
 function withLayout(routeKey, page) {
@@ -28,6 +30,14 @@ export default function App() {
           <Route
             path="/gallery"
             element={withLayout('gallery', <GalleryPage key="gallery-page" />)}
+          />
+          <Route
+            path="/vp-vision"
+            element={withLayout('vp-vision', <VPVisionPage key="vp-vision-page" />)}
+          />
+          <Route
+            path="/vp-vision/analytics"
+            element={withLayout('vp-vision-analytics', <VPAnalyticsPage key="vp-vision-analytics-page" />)}
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

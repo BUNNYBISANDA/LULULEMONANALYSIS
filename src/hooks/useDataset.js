@@ -51,9 +51,9 @@ export function useDataset(loader, deps = []) {
   return state
 }
 
-export function useDashboardDataset(includeMaster = false) {
+export function useDashboardDataset(includeMaster = false, refreshKey = 0) {
   const { selectedProductId, selectedTimePeriod } = useProductFilter()
-  const state = useDataset(() => loadDashboardBundle(includeMaster), [includeMaster])
+  const state = useDataset(() => loadDashboardBundle(includeMaster), [includeMaster, refreshKey])
   const normalizedData = useMemo(
     () =>
       state.data ? buildDashboardData(state.data, selectedProductId, selectedTimePeriod) : null,

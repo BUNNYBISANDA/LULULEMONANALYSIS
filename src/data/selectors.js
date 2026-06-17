@@ -4,6 +4,9 @@ import {
   LOW_STAR_RATINGS,
   TIME_PERIOD_OPTIONS,
   businessGroupBlueprints,
+  defaultDefectCategory,
+  defectCategoryMap,
+  officialDefectGroups,
   pageMetadata,
   severityPalette,
   themeDetailCopy,
@@ -11,6 +14,15 @@ import {
   themePalette,
   trendPalette,
 } from './constants'
+
+const OFFICIAL_DEFECT_GROUP_KEYS = new Set(
+  officialDefectGroups.filter((group) => group.isCertified).map((group) => group.key),
+)
+
+export function resolveReviewDefectGroup(review) {
+  const group = review?.matchedDefectGroup
+  return OFFICIAL_DEFECT_GROUP_KEYS.has(group) ? group : 'Unclassified'
+}
 
 export function safeNumber(value) {
   const parsed = Number(value)
@@ -354,6 +366,22 @@ function normalizeReviews(reviews = []) {
           pickFirstValue(review.business_insight, review.businessInsight) ||
           themeDetailCopy[complaintTheme]?.action ||
           '',
+        matchedDefectCode: pickFirstValue(review.matched_defect_code, review.matchedDefectCode),
+        matchedDefectDesc: pickFirstValue(review.matched_defect_desc, review.matchedDefectDesc),
+        matchedDefectGroupCode: pickFirstValue(
+          review.matched_defect_group_code,
+          review.matchedDefectGroupCode,
+        ),
+        matchedDefectGroup: pickFirstValue(review.matched_defect_group, review.matchedDefectGroup),
+        similarityScore: safeNumber(pickFirstValue(review.similarity_score, review.similarityScore)),
+        semanticMatchMethod: pickFirstValue(
+          review.semantic_match_method,
+          review.semanticMatchMethod,
+        ),
+        operationRelated:
+          normalizeOptionalTruth(pickFirstValue(review.operation_related, review.operationRelated)) ??
+          false,
+        confidenceScore: safeNumber(pickFirstValue(review.confidence_score, review.confidenceScore)),
         helpfulVotes: safeNumber(pickFirstValue(review.helpful_votes, review.likes)),
         verifiedBuyer:
           normalizeOptionalTruth(
@@ -932,6 +960,53 @@ export function extractKeywords(reviews = []) {
     'jacket',
     'define',
     'lululemon',
+    'not',
+    'but',
+    'was',
+    'for',
+    'like',
+    'are',
+    'had',
+    'you',
+    'one',
+    'back',
+    'her',
+    'his',
+    'all',
+    'out',
+    'get',
+    'got',
+    'too',
+    'now',
+    'can',
+    'will',
+    'still',
+    'even',
+    'much',
+    'how',
+    'who',
+    'why',
+    'these',
+    'those',
+    'such',
+    'over',
+    'also',
+    'has',
+    'had',
+    'did',
+    'does',
+    'should',
+    'though',
+    'while',
+    'first',
+    'second',
+    'time',
+    'going',
+    'went',
+    'bought',
+    'buy',
+    'product',
+    'review',
   ])
 
   const counts = new Map()
@@ -1412,4 +1487,490 @@ export function buildDashboardData(
 
 export function getSeverityColor(rating) {
   return severityPalette[rating] || trendPalette.neutral
+}
+
+export function resolveDefectCategory(theme) {
+  return defectCategoryMap[theme] || defaultDefectCategory
+}
+
+export function buildDefectCategoryDistribution(reviews = []) {
+  const buckets = new Map()
+
+  reviews.forEach((review) => {
+    const meta = resolveDefectCategory(review.complaintTheme)
+    if (!buckets.has(meta.label)) {
+      buckets.set(meta.label, {
+        label: meta.label,
+        theme: meta.label,
+        slug: slugify(meta.label),
+        shortTheme: meta.label,
+        issueLabel: meta.issueLabel,
+        operationArea: meta.operationArea,
+        recommendedAction: meta.recommendedAction,
+        owner: meta.owner,
+        operationRelated: meta.operationRelated,
+        count: 0,
+      })
+    }
+
+    buckets.get(meta.label).count += 1
+  })
+
+  const total = reviews.length
+
+  return [...buckets.values()]
+    .sort((left, right) => right.count - left.count)
+    .map((row, index) => ({
+      ...row,
+      percentage: total ? (row.count / total) * 100 : 0,
+      riskLevel: index === 0 ? 'High' : index <= 2 ? 'Medium' : 'Low',
+      fill: index === 0 ? severityPalette[1] : index <= 2 ? severityPalette[2] : severityPalette[3],
+    }))
+}
+
+export function buildOperationAnalysisRows(distributionRows = []) {
+  return distributionRows.filter((row) => row.operationRelated)
+}
+
+export function buildPriorityReadout(operationRows = []) {
+  return operationRows.slice(0, 4).map((row, index) => ({
+    priority: `P${index + 1}`,
+    issue: row.issueLabel,
+    impact: row.riskLevel,
+    owner: row.owner,
+    action: row.recommendedAction,
+    count: row.count,
+  }))
+}
+
+export function buildVolumeTrend(monthlyTrend = []) {
+  const latest = monthlyTrend.at(-1)
+  const previous = monthlyTrend.at(-2)
+
+  if (!latest || !previous) {
+    return { direction: 'stable', delta: 0, deltaPercent: 0 }
+  }
+
+  const delta = latest.total - previous.total
+  const deltaPercent = previous.total ? (delta / previous.total) * 100 : 0
+
+  return {
+    direction: delta > 0 ? 'increased' : delta < 0 ? 'decreased' : 'stable',
+    delta,
+    deltaPercent,
+  }
+}
+
+export function buildRootCauseInsights({ topComplaintTheme, topImageBackedTheme, volumeTrend } = {}) {
+  const insights = []
+
+  if (topComplaintTheme?.theme) {
+    insights.push(
+      `${topComplaintTheme.theme} is the largest low-star signal this period, at ${topComplaintTheme.share.toFixed(1)}% of low-star reviews.`,
+    )
+
+    const meta = resolveDefectCategory(topComplaintTheme.theme)
+    insights.push(
+      meta.operationRelated
+        ? `${topComplaintTheme.theme} complaints are operation-related and should be reviewed by the ${meta.operationArea} team.`
+        : `${topComplaintTheme.theme} complaints sit outside manufacturing operations and point to service or expectation gaps.`,
+    )
+  }
+
+  if (topImageBackedTheme?.theme) {
+    insights.push(
+      `Reviews with images provide stronger evidence for ${topImageBackedTheme.theme} issues.`,
+    )
+  }
+
+  if (volumeTrend && volumeTrend.direction !== 'stable') {
+    insights.push(
+      `Low-star review volume ${volumeTrend.direction} by ${Math.abs(volumeTrend.delta)} reviews compared with the previous period.`,
+    )
+  } else if (volumeTrend) {
+    insights.push('Low-star review volume remained stable compared with the previous period.')
+  }
+
+  return insights
+}
+
+export function buildOverallAverageRating(productSummaryRows = []) {
+  const totalReviews = productSummaryRows.reduce((sum, row) => sum + row.totalReviews, 0)
+
+  if (!totalReviews) {
+    return 0
+  }
+
+  const weightedSum = productSummaryRows.reduce(
+    (sum, row) => sum + row.averageRating * row.totalReviews,
+    0,
+  )
+
+  return Number((weightedSum / totalReviews).toFixed(2))
+}
+
+export function isFactoryActionable(review) {
+  return Boolean(review?.operationRelated)
+}
+
+export function resolveDefectGroupMeta(groupLabel) {
+  return (
+    officialDefectGroups.find((item) => item.key === groupLabel) ||
+    officialDefectGroups.find((item) => item.key === 'Unclassified')
+  )
+}
+
+export function resolveOperationArea(groupLabel) {
+  return resolveDefectGroupMeta(groupLabel).operationArea
+}
+
+export function resolveOwner(groupLabel) {
+  return resolveDefectGroupMeta(groupLabel).owner
+}
+
+export function resolvePreventionAction(groupLabel) {
+  return resolveDefectGroupMeta(groupLabel).preventionAction
+}
+
+function countByDefectGroup(reviews = []) {
+  const counts = new Map()
+
+  reviews.forEach((review) => {
+    const key = resolveReviewDefectGroup(review)
+
+    if (!counts.has(key)) {
+      counts.set(key, { key, count: 0, imageCount: 0 })
+    }
+
+    const row = counts.get(key)
+    row.count += 1
+    if (review.hasImageEvidence) {
+      row.imageCount += 1
+    }
+  })
+
+  return counts
+}
+
+export function calculateFactoryActionabilityScore(reviews = []) {
+  const total = reviews.length
+  const actionableReviews = reviews.filter((review) => isFactoryActionable(review))
+  const actionable = actionableReviews.length
+  const nonProduction = total - actionable
+  const withImages = reviews.filter((review) => review.hasImageEvidence).length
+  const officialCounts = [...countByDefectGroup(actionableReviews).entries()].filter(
+    ([key]) => key !== 'Unclassified',
+  )
+  const topEntry = officialCounts.sort((left, right) => right[1].count - left[1].count)[0]
+
+  return {
+    total,
+    actionable,
+    actionableShare: total ? (actionable / total) * 100 : 0,
+    nonProduction,
+    nonProductionShare: total ? (nonProduction / total) * 100 : 0,
+    withImages,
+    withImagesShare: total ? (withImages / total) * 100 : 0,
+    highestRiskCategory: topEntry ? resolveDefectGroupMeta(topEntry[0]).label : null,
+  }
+}
+
+export function buildProductionDefectMatrix(reviews = []) {
+  const actionableReviews = reviews.filter((review) => isFactoryActionable(review))
+  const nonActionableReviews = reviews.filter((review) => !isFactoryActionable(review))
+  const actionableCounts = countByDefectGroup(actionableReviews)
+  const maxCount = Math.max(
+    0,
+    ...officialDefectGroups
+      .filter((group) => group.isProduction)
+      .map((group) => actionableCounts.get(group.key)?.count || 0),
+  )
+
+  return officialDefectGroups.map((group) => {
+    if (!group.isProduction) {
+      return {
+        key: group.key,
+        label: group.label,
+        signalExamples: group.actionIssueLabel,
+        count: nonActionableReviews.length,
+        imageCount: nonActionableReviews.filter((review) => review.hasImageEvidence).length,
+        riskLevel: 'Excluded',
+        operationArea: group.operationArea,
+        heatmapLabel: group.heatmapLabel,
+        owner: group.owner,
+        preventionAction: group.preventionAction,
+        actionIssueLabel: group.actionIssueLabel,
+        whyItMatters: 'Not a manufacturing defect signal.',
+        qaChecklist: group.qaChecklist,
+        icon: group.icon,
+        isProduction: false,
+      }
+    }
+
+    const row = actionableCounts.get(group.key) || { count: 0, imageCount: 0 }
+    const riskLevel =
+      row.count === 0
+        ? 'Low'
+        : row.count === maxCount && row.imageCount > 0
+          ? 'High'
+          : row.count === maxCount || row.imageCount > 0 || row.count >= 2
+            ? 'Medium'
+            : 'Low'
+
+    return {
+      key: group.key,
+      label: group.label,
+      signalExamples: group.actionIssueLabel,
+      count: row.count,
+      imageCount: row.imageCount,
+      riskLevel,
+      operationArea: group.operationArea,
+      heatmapLabel: group.heatmapLabel,
+      owner: group.owner,
+      preventionAction: group.preventionAction,
+      actionIssueLabel: group.actionIssueLabel,
+      whyItMatters: `${group.label} defects matched against the official defect master list.`,
+      qaChecklist: group.qaChecklist,
+      icon: group.icon,
+      isProduction: true,
+    }
+  })
+}
+
+export function buildOperationRiskHeatmap(reviews = []) {
+  const matrixRows = buildProductionDefectMatrix(reviews)
+  const sorted = [...reviews].sort(
+    (left, right) => new Date(left.reviewDate).getTime() - new Date(right.reviewDate).getTime(),
+  )
+  const midpoint = Math.floor(sorted.length / 2)
+  const firstCounts = countByDefectGroup(
+    sorted.slice(0, midpoint).filter((review) => isFactoryActionable(review)),
+  )
+  const secondCounts = countByDefectGroup(
+    sorted.slice(midpoint).filter((review) => isFactoryActionable(review)),
+  )
+
+  return matrixRows.map((row) => {
+    const before = firstCounts.get(row.key)?.count || 0
+    const after = secondCounts.get(row.key)?.count || 0
+
+    return {
+      key: row.key,
+      label: row.heatmapLabel,
+      riskLevel: row.riskLevel,
+      count: row.count,
+      imageCount: row.imageCount,
+      trend: after > before ? 'up' : after < before ? 'down' : 'flat',
+      owner: row.owner,
+      preventionAction: row.preventionAction,
+      icon: row.icon,
+      isProduction: row.isProduction,
+    }
+  })
+}
+
+export function buildSewerQAActionBoard(reviews = []) {
+  const matrixRows = buildProductionDefectMatrix(reviews).filter((row) => row.isProduction)
+
+  return [...matrixRows]
+    .sort((left, right) => right.count - left.count)
+    .map((row, index) => ({
+      key: row.key,
+      issue: row.actionIssueLabel,
+      whereToAct: row.heatmapLabel,
+      whatToCheck: row.qaChecklist,
+      reviewCount: row.count,
+      imageCount: row.imageCount,
+      priority: index === 0 ? 'P1' : index <= 2 ? 'P2' : 'P3',
+      icon: row.icon,
+    }))
+}
+
+export function buildProductionEvidenceWall(reviews = [], images = [], limit = 12) {
+  const priorityByCategory = new Map(
+    buildSewerQAActionBoard(reviews).map((row) => [row.key, row.priority]),
+  )
+  const imageByReviewKey = new Map()
+
+  images.forEach((image) => {
+    const key = getReviewEvidenceKey(image)
+    if (!imageByReviewKey.has(key)) {
+      imageByReviewKey.set(key, image)
+    }
+  })
+
+  return reviews
+    .map((review) => {
+      if (!isFactoryActionable(review)) {
+        return null
+      }
+
+      const categoryKey = resolveReviewDefectGroup(review)
+      const meta = resolveDefectGroupMeta(categoryKey)
+      const matchedImage = imageByReviewKey.get(getReviewEvidenceKey(review))
+      const confidenceScore = Math.min(
+        100,
+        60 +
+          (review.hasImageEvidence ? 25 : 0) +
+          (review.rating === 1 ? 15 : review.rating === 2 ? 8 : 0),
+      )
+
+      return {
+        key: review.key,
+        rating: review.rating,
+        title: review.title,
+        reviewText: review.reviewText,
+        productName: review.productName,
+        reviewDate: review.reviewDate,
+        category: meta.label,
+        operationArea: meta.heatmapLabel,
+        owner: meta.owner,
+        priority: priorityByCategory.get(categoryKey) || 'P3',
+        confidenceScore,
+        imageUrl: matchedImage?.thumbnailUrl || matchedImage?.imageUrl || null,
+        hasImageEvidence: Boolean(review.hasImageEvidence),
+      }
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.confidenceScore - left.confidenceScore)
+    .slice(0, limit)
+}
+
+export function buildQualityInsightCategories(reviews = []) {
+  const officialGroups = officialDefectGroups.filter((group) => group.isCertified)
+
+  const reviewsByGroup = new Map(officialGroups.map((group) => [group.key, []]))
+  reviews.forEach((review) => {
+    if (!isFactoryActionable(review)) {
+      return
+    }
+
+    const officialGroup = resolveReviewDefectGroup(review)
+
+    if (reviewsByGroup.has(officialGroup)) {
+      reviewsByGroup.get(officialGroup).push(review)
+    }
+  })
+
+  const grandTotal = [...reviewsByGroup.values()].reduce((sum, list) => sum + list.length, 0)
+  const maxCount = Math.max(0, ...[...reviewsByGroup.values()].map((list) => list.length))
+
+  return officialGroups
+    .map((group) => {
+      const groupReviews = reviewsByGroup.get(group.key) || []
+      const count = groupReviews.length
+
+      const similaritySum = groupReviews.reduce((sum, review) => sum + (review.similarityScore || 0), 0)
+      const averageSimilarity = count ? Number(((similaritySum / count) * 100).toFixed(1)) : 0
+
+      const imageTotal = groupReviews.reduce((sum, review) => sum + (review.imageUrls?.length || 0), 0)
+      const imageBackedReviewCount = groupReviews.filter((review) => review.hasImageEvidence).length
+
+      return {
+        key: group.key,
+        label: group.label,
+        summary: group.customerSummary || '',
+        icon: group.icon,
+        count,
+        imageCount: imageTotal,
+        imageBackedReviewCount,
+        sharePercent: grandTotal ? Number(((count / grandTotal) * 100).toFixed(1)) : 0,
+        barWidth: maxCount ? Math.max((count / maxCount) * 100, count > 0 ? 4 : 0) : 0,
+        averageSimilarity,
+        officialSource: 'master_defect.csv',
+      }
+    })
+    .sort((left, right) => right.count - left.count)
+    .map((row, index) => ({ ...row, officialRank: index + 1 }))
+}
+
+export function buildProductionCategoryTrend(reviews = []) {
+  const officialKeys = officialDefectGroups
+    .filter((group) => group.isCertified)
+    .map((group) => group.key)
+  const rows = new Map()
+
+  reviews.forEach((review) => {
+    if (!isFactoryActionable(review)) {
+      return
+    }
+
+    const categoryKey = resolveReviewDefectGroup(review)
+    const monthKey = review.monthKey || 'Unknown'
+    if (!rows.has(monthKey)) {
+      rows.set(monthKey, { monthKey, label: formatMonthLabel(`${monthKey}-01`) })
+    }
+
+    const row = rows.get(monthKey)
+    row[categoryKey] = (row[categoryKey] || 0) + 1
+  })
+
+  return [...rows.values()]
+    .sort((left, right) => left.monthKey.localeCompare(right.monthKey))
+    .map((row) => {
+      officialKeys.forEach((key) => {
+        if (!Object.prototype.hasOwnProperty.call(row, key)) {
+          row[key] = 0
+        }
+      })
+
+      return row
+    })
+}
+
+export function buildPreventionPriorityRanking(reviews = []) {
+  const matrixRows = buildProductionDefectMatrix(reviews).filter((row) => row.isProduction)
+
+  return [...matrixRows]
+    .sort((left, right) => right.count - left.count)
+    .map((row, index) => ({
+      rank: index + 1,
+      issue: row.actionIssueLabel,
+      whyItMatters: row.whyItMatters,
+      owner: row.owner,
+      preventionAction: row.preventionAction,
+      evidenceStrength: row.riskLevel === 'High' ? 'High' : row.riskLevel === 'Medium' ? 'Medium' : 'Low',
+      count: row.count,
+    }))
+}
+
+export function buildNonProductionBreakdown(reviews = []) {
+  const counts = new Map()
+
+  reviews
+    .filter((review) => !isFactoryActionable(review))
+    .forEach((review) => {
+      const theme = review.complaintTheme || 'Other'
+      counts.set(theme, (counts.get(theme) || 0) + 1)
+    })
+
+  return [...counts.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((left, right) => right.count - left.count)
+}
+
+export function buildExecutiveProductionInsights(reviews = []) {
+  const score = calculateFactoryActionabilityScore(reviews)
+  const matrixRows = buildProductionDefectMatrix(reviews).filter((row) => row.isProduction)
+  const topRow = [...matrixRows].sort((left, right) => right.count - left.count)[0]
+  const topImageRow = [...matrixRows].sort((left, right) => right.imageCount - left.imageCount)[0]
+  const insights = []
+
+  insights.push(`${score.actionableShare.toFixed(0)}% of low-star reviews are factory actionable.`)
+
+  if (topRow && topRow.count > 0) {
+    insights.push(`${topRow.label} is the highest-risk defect group this period.`)
+  }
+
+  if (topImageRow && topImageRow.imageCount > 0) {
+    insights.push(`Image evidence is strongest for ${topImageRow.label.toLowerCase()} complaints.`)
+  }
+
+  insights.push(
+    `${score.nonProduction} non-production complaint${score.nonProduction === 1 ? '' : 's'} ${
+      score.nonProduction === 1 ? 'is' : 'are'
+    } excluded from factory action planning.`,
+  )
+
+  return insights
 }

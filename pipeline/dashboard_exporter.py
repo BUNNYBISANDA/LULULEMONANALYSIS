@@ -29,6 +29,9 @@ def coerce_review_rows(rows: list[dict[str, str]]) -> list[dict[str, object]]:
                 "total_comments": safe_int(row.get("total_comments")),
                 "is_staff": str(row.get("is_staff", "")).lower() == "true",
                 "is_verified_buyer": str(row.get("is_verified_buyer", "")).lower() == "true",
+                "similarity_score": safe_float(row.get("similarity_score")),
+                "confidence_score": safe_float(row.get("confidence_score")),
+                "operation_related": str(row.get("operation_related", "")).lower() == "true",
             }
         )
     return output

@@ -1,7 +1,84 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, ExternalLink, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ExternalLink, Minus, Plus, RotateCcw, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import RatingBadge from '../primitives/RatingBadge'
+import { useImageZoom } from '../../hooks/useImageZoom'
+
+function ZoomableGalleryImage({ imageUrl, alt }) {
+  const {
+    scale,
+    position,
+    rotation,
+    canZoomIn,
+    canZoomOut,
+    zoomIn,
+    zoomOut,
+    reset,
+    handleWheel,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+  } = useImageZoom(imageUrl)
+
+  return (
+    <>
+      <div
+        className={`flex h-full w-full items-center justify-center overflow-hidden ${
+          scale > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-zoom-in'
+        }`}
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
+        <img
+          src={imageUrl}
+          alt={alt}
+          draggable={false}
+          className="max-h-[70vh] w-full select-none object-contain"
+          style={{
+            transform: `translate3d(${position.x}px, ${position.y}px, 0) rotate(${rotation}deg) scale(${scale})`,
+            transformOrigin: 'center center',
+            transition: scale === 1 ? 'transform 150ms ease' : 'none',
+          }}
+        />
+      </div>
+      <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-white px-3 py-2 shadow-lg">
+        <button
+          type="button"
+          onClick={zoomOut}
+          disabled={!canZoomOut}
+          aria-label="Zoom out"
+          className="rounded-full p-2 text-black transition hover:bg-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <Minus size={16} />
+        </button>
+        <span className="w-12 text-center text-xs font-semibold text-black">
+          {Math.round(scale * 100)}%
+        </span>
+        <button
+          type="button"
+          onClick={zoomIn}
+          disabled={!canZoomIn}
+          aria-label="Zoom in"
+          className="rounded-full p-2 text-black transition hover:bg-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          <Plus size={16} />
+        </button>
+        <span className="mx-1 h-5 w-px bg-[#e5e5e5]" />
+        <button
+          type="button"
+          onClick={reset}
+          aria-label="Reset zoom"
+          className="rounded-full p-2 text-black transition hover:bg-[#f5f5f5]"
+        >
+          <RotateCcw size={16} />
+        </button>
+      </div>
+    </>
+  )
+}
 
 export default function Lightbox({ items = [], activeIndex, onClose, onChange }) {
   const activeItem = items[activeIndex] || null
@@ -66,10 +143,10 @@ export default function Lightbox({ items = [], activeIndex, onClose, onChange })
             }
           }}
         >
-          <img
-            src={activeItem.imageUrl}
+          <ZoomableGalleryImage
+            key={activeItem.key}
+            imageUrl={activeItem.imageUrl}
             alt={activeItem.reviewTitle}
-            className="max-h-[70vh] w-full object-contain"
           />
           <button
             type="button"

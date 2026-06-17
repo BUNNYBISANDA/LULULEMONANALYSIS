@@ -6,6 +6,7 @@ from pipeline.low_star_processor import main as low_star_main
 from pipeline.multi_product_image_mapper import main as image_mapper_main
 from pipeline.multi_product_reviews_scraper import main as scraper_main
 from pipeline.pipeline_common import ensure_pipeline_dirs, log
+from pipeline.semantic_defect_matcher import main as semantic_matcher_main
 from pipeline.summary_generator import main as summary_main
 
 
@@ -16,6 +17,7 @@ def main() -> int:
         ("multi_product_reviews_scraper", scraper_main),
         ("low_star_processor", low_star_main),
         ("complaint_classifier", classifier_main),
+        ("semantic_defect_matcher", semantic_matcher_main),
         ("multi_product_image_mapper", image_mapper_main),
         ("summary_generator", summary_main),
         ("dashboard_exporter", exporter_main),

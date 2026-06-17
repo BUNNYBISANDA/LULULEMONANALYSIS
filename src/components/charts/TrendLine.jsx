@@ -44,6 +44,7 @@ export default function TrendLine({
                 key={area.dataKey}
                 type="monotone"
                 dataKey={area.dataKey}
+                name={area.name || area.dataKey}
                 stackId={area.stackId || 'stack'}
                 stroke={area.stroke}
                 fill={area.fill}

@@ -28,6 +28,8 @@ IMAGES_DIR = DATA_DIR / "images"
 PUBLIC_DATA_DIR = ROOT_DIR / "public" / "data"
 PUBLIC_DASHBOARD_DATA_DIR = PUBLIC_DATA_DIR / "dashboard_data"
 
+MASTER_DEFECT_CSV = DATA_DIR / "master_defect.csv"
+
 PRODUCTS_CSV = INPUT_DIR / "products.csv"
 ALL_REVIEWS_CSV = PROCESSED_DIR / "all_reviews.csv"
 ALL_REVIEWS_JSON = PROCESSED_DIR / "all_reviews.json"
@@ -157,6 +159,14 @@ REVIEW_FIELDNAMES = [
     "photo_captions",
     "complaint_theme",
     "business_insight",
+    "matched_defect_code",
+    "matched_defect_desc",
+    "matched_defect_group_code",
+    "matched_defect_group",
+    "similarity_score",
+    "semantic_match_method",
+    "operation_related",
+    "confidence_score",
     "scraped_at",
 ]
 

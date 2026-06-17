@@ -1,0 +1,6 @@
+requests
+urllib3
+sentence-transformers
+scikit-learn
+numpy
+pandas
