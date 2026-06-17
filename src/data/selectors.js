@@ -20,7 +20,7 @@ const OFFICIAL_DEFECT_GROUP_KEYS = new Set(
 )
 
 export function resolveReviewDefectGroup(review) {
-  const group = review?.matchedDefectGroup
+  const group = String(review?.matchedDefectGroup || '').trim()
   return OFFICIAL_DEFECT_GROUP_KEYS.has(group) ? group : 'Unclassified'
 }
 
@@ -1610,7 +1610,7 @@ export function buildOverallAverageRating(productSummaryRows = []) {
 }
 
 export function isFactoryActionable(review) {
-  return Boolean(review?.operationRelated)
+  return resolveReviewDefectGroup(review) !== 'Unclassified'
 }
 
 export function resolveDefectGroupMeta(groupLabel) {

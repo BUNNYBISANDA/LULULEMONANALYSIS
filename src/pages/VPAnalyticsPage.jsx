@@ -212,6 +212,12 @@ function QualityEvidenceDrawer({ category, reviews, onClose, onImageClick }) {
                 ) : null}
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[#767676]">
                   <span className="rounded-full bg-[#fafafa] px-3 py-1">
+                    Code: {review.matchedDefectCode || 'No defect code'}
+                  </span>
+                  <span className="rounded-full bg-[#fafafa] px-3 py-1">
+                    Description: {review.matchedDefectDesc || 'No defect description'}
+                  </span>
+                  <span className="rounded-full bg-[#fafafa] px-3 py-1">
                     Group: {review.matchedDefectGroup || 'Unclassified'}
                   </span>
                   <span className="rounded-full bg-[#fafafa] px-3 py-1">
@@ -368,8 +374,8 @@ export default function VPAnalytics() {
         .filter(
           (review) =>
             isFactoryActionable(review) &&
-            officialGroupKeys.has(review.matchedDefectGroup) &&
-            review.matchedDefectGroup === category.key,
+            officialGroupKeys.has(resolveReviewDefectGroup(review)) &&
+            resolveReviewDefectGroup(review) === category.key,
         )
         .sort((left, right) => right.similarityScore - left.similarityScore)
         .slice(0, 20)
@@ -393,14 +399,14 @@ export default function VPAnalytics() {
     const officialGroupKeys = new Set(qualityInsightCategories.map((row) => row.key))
     const exactOfficialGroupCount = displayReviews.filter(
       (review) =>
-        isFactoryActionable(review) && officialGroupKeys.has(review.matchedDefectGroup),
+        isFactoryActionable(review) && officialGroupKeys.has(resolveReviewDefectGroup(review)),
     ).length
     const finalRankingCount = qualityInsightCategories.reduce((sum, row) => sum + row.count, 0)
     const legacyGroupsUsed = qualityInsightCategories.filter((row) =>
       LEGACY_CATEGORY_LABELS.includes(row.key),
     )
     const matchedReviews = displayReviews.filter(
-      (review) => isFactoryActionable(review) && officialGroupKeys.has(review.matchedDefectGroup),
+      (review) => isFactoryActionable(review) && officialGroupKeys.has(resolveReviewDefectGroup(review)),
     )
     const averageGroupSimilarity = matchedReviews.length
       ? Number(
@@ -885,7 +891,7 @@ export default function VPAnalytics() {
         <SectionHeader
           eyebrow="Master Defect Debug"
           title="CSV match audit by official defect group"
-          description="Use this view to verify the dashboard is classifying reviews directly into the 6 official master_defect.csv groups via group_similarity, with no individual defect-code matching."
+          description="Use this view to verify the dashboard is classifying reviews directly into the 6 official master_defect.csv groups from matched_defect_group."
         />
 
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
@@ -902,10 +908,10 @@ export default function VPAnalytics() {
           </div>
           <div className="rounded-[20px] border border-[#e5e5e5] bg-[#fafafa] p-5">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
-              Group Similarity Source
+              Similarity Source
             </p>
             <p className="font-display mt-2 text-2xl font-semibold text-black">
-              group_similarity
+              similarity_score
             </p>
             <p className="mt-2 text-sm leading-6 text-[#4a4a4a]">
               {rankingVerification.averageGroupSimilarity}% average match confidence across ranked reviews.
@@ -970,6 +976,8 @@ export default function VPAnalytics() {
                       <thead className="bg-[#fafafa] text-[11px] uppercase tracking-[0.16em] text-[#767676]">
                         <tr>
                           <th className="px-4 py-3">Review Title</th>
+                          <th className="px-4 py-3">Matched Defect Code</th>
+                          <th className="px-4 py-3">Matched Defect Description</th>
                           <th className="px-4 py-3">Matched Defect Group</th>
                           <th className="px-4 py-3">Similarity Score</th>
                         </tr>
@@ -979,6 +987,12 @@ export default function VPAnalytics() {
                           <tr key={review.key} className="border-t border-[#f0f0f0] align-top">
                             <td className="min-w-64 px-4 py-3 font-medium text-black">
                               {review.title}
+                            </td>
+                            <td className="whitespace-nowrap px-4 py-3 text-[#4a4a4a]">
+                              {review.matchedDefectCode || 'None'}
+                            </td>
+                            <td className="min-w-72 px-4 py-3 text-[#4a4a4a]">
+                              {review.matchedDefectDesc || 'No defect description'}
                             </td>
                             <td className="whitespace-nowrap px-4 py-3 text-[#4a4a4a]">
                               {review.matchedDefectGroup || 'None'}
