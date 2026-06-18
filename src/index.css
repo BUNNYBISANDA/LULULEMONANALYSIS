@@ -62,14 +62,30 @@ textarea:focus-visible {
 .brand-mark {
   font-family: 'Trebuchet MS', 'Lucida Sans Unicode', sans-serif;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   text-transform: lowercase;
 }
 
 .font-display {
   font-family: 'Inter', 'Helvetica Neue', sans-serif;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
+}
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border-width: 0 !important;
+}
+
+table.sr-only {
+  display: block !important;
 }
 
 .soft-card {

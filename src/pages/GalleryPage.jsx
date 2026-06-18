@@ -60,14 +60,18 @@ export default function Gallery() {
 
     resetFilters()
     setActiveIndex(-1)
-  }, [selectedProductId])
+  }, [resetFilters, selectedProductId])
 
   if (loading) {
     return <Skeleton className="h-[760px] rounded-[20px]" />
   }
 
   if (error || !data) {
-    return <Panel className="p-8 text-sm text-[#4a4a4a]">Image gallery could not load.</Panel>
+    return (
+      <Panel className="p-4 text-sm text-[#4a4a4a] sm:p-8">
+        Image gallery could not load.
+      </Panel>
+    )
   }
 
   const ratingBreakdown = [1, 2, 3].map((rating) => ({
@@ -77,7 +81,7 @@ export default function Gallery() {
 
   return (
     <div className="space-y-5">
-      <Panel className="p-7 sm:p-8">
+      <Panel className="p-4 sm:p-6 lg:p-8">
         <Link to="/analytics" className="text-sm text-[#767676] hover:text-[#000000]">
           {'<- Back to Analytics'}
         </Link>
@@ -100,15 +104,15 @@ export default function Gallery() {
         />
       </Panel>
 
-      <Panel className="p-5">
+      <Panel className="p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-3 text-sm text-[#4a4a4a]">
-          <span className="rounded-full bg-[#000000] px-4 py-2 text-white">
+          <span className="max-w-full rounded-full bg-[#000000] px-3 py-2 text-xs text-white sm:px-4 sm:text-sm">
             {data.imageItems.length} images in {data.selectedTimePeriod}
           </span>
           {ratingBreakdown.map((item) => (
             <span
               key={item.rating}
-              className="rounded-full border border-black/8 bg-white px-4 py-2"
+              className="rounded-full border border-black/8 bg-white px-3 py-2 text-xs sm:px-4 sm:text-sm"
             >
               {item.count} x {item.rating}-star
             </span>
@@ -122,15 +126,15 @@ export default function Gallery() {
             meta={`Selected period: ${data.selectedTimePeriod}. Showing ${data.periodRangeLabel}.`}
           />
         </div>
-        <div className="grid flex-1 gap-3 xl:grid-cols-[0.7fr_1fr_0.9fr_0.8fr_auto_0.8fr]">
-          <label className="flex flex-col gap-1 text-sm text-[#4a4a4a]">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+        <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[0.7fr_1fr_0.9fr_0.8fr_auto_0.8fr]">
+          <label className="flex min-w-0 flex-col gap-1 text-sm text-[#4a4a4a]">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
               Rating
             </span>
             <select
               value={filters.rating}
               onChange={(event) => updateFilter('rating', event.target.value)}
-              className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000]"
+              className="w-full min-w-0 rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000]"
             >
               <option value={ALL_FILTER_VALUE}>All Ratings</option>
               <option value="1">1 Star</option>
@@ -138,14 +142,14 @@ export default function Gallery() {
               <option value="3">3 Star</option>
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm text-[#4a4a4a]">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+          <label className="flex min-w-0 flex-col gap-1 text-sm text-[#4a4a4a]">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
               Complaint Theme
             </span>
             <select
               value={filters.theme}
               onChange={(event) => updateFilter('theme', event.target.value)}
-              className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000]"
+              className="w-full min-w-0 rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000]"
             >
               <option value={ALL_FILTER_VALUE}>All Themes</option>
               {data.themeRows.map((theme) => (
@@ -155,28 +159,28 @@ export default function Gallery() {
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm text-[#4a4a4a]">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+          <label className="flex min-w-0 flex-col gap-1 text-sm text-[#4a4a4a]">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
               Verified
             </span>
             <select
               value={filters.verified}
               onChange={(event) => updateFilter('verified', event.target.value)}
-              className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000]"
+              className="w-full min-w-0 rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000]"
             >
               <option value={ALL_FILTER_VALUE}>All</option>
               <option value="true">Verified only</option>
               <option value="false">Unverified only</option>
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm text-[#4a4a4a]">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+          <label className="flex min-w-0 flex-col gap-1 text-sm text-[#4a4a4a]">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
               Size
             </span>
             <select
               value={filters.size}
               onChange={(event) => updateFilter('size', event.target.value)}
-              className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000]"
+              className="w-full min-w-0 rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000]"
             >
               <option value={ALL_FILTER_VALUE}>All Sizes</option>
               {data.sizeOptions.map((size) => (
@@ -187,26 +191,26 @@ export default function Gallery() {
             </select>
           </label>
           <DateRangePicker from={filters.from} to={filters.to} onChange={updateFilter} />
-          <label className="flex flex-col gap-1 text-sm text-[#4a4a4a]">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+          <label className="flex min-w-0 flex-col gap-1 text-sm text-[#4a4a4a]">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
               Sort
             </span>
             <select
               value={filters.sortBy}
               onChange={(event) => updateFilter('sortBy', event.target.value)}
-              className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000]"
+              className="w-full min-w-0 rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000]"
             >
               <option value="newest">Newest</option>
               <option value="helpful">Helpful votes</option>
             </select>
           </label>
         </div>
-        <div className="mt-3 flex items-center justify-between gap-4">
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <p className="text-sm text-[#4a4a4a]">Showing {filteredItems.length} images</p>
           <button
             type="button"
             onClick={resetFilters}
-            className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000] hover:border-black"
+            className="w-full rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000] hover:border-black sm:w-auto"
           >
             Clear Filters
           </button>
@@ -227,7 +231,7 @@ export default function Gallery() {
           }
         />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+        <div className="grid gap-3 min-[430px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
           {filteredItems.map((item, index) => {
             const extraCount =
               filteredItems.filter((candidate) => candidate.reviewId === item.reviewId).length - 1

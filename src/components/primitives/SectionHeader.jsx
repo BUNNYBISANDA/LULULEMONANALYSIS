@@ -7,17 +7,17 @@ export default function SectionHeader({
   titlePrefix = null,
 }) {
   return (
-    <div className={`${align === 'center' ? 'mx-auto max-w-3xl text-center' : ''} ${className}`}>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+    <div className={`min-w-0 ${align === 'center' ? 'mx-auto max-w-3xl text-center' : ''} ${className}`}>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
         {eyebrow}
       </p>
       <div
-        className={`mt-3 flex gap-3 ${
+        className={`mt-3 flex min-w-0 gap-3 ${
           align === 'center' ? 'items-center justify-center' : 'items-center'
         }`}
       >
         {titlePrefix}
-        <h2 className="font-display text-2xl font-semibold tracking-[-0.04em] text-[#000000] sm:text-3xl">
+        <h2 className="font-display min-w-0 break-words text-xl font-semibold leading-tight tracking-normal text-[#000000] sm:text-2xl md:text-3xl">
           {title}
         </h2>
       </div>

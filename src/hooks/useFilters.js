@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ALL_FILTER_VALUE } from '../data/constants'
 
@@ -15,23 +15,22 @@ function parseValue(rawValue, fallback) {
 }
 
 export function useFilters(defaults) {
-  const defaultsRef = useRef(defaults)
+  const [stableDefaults] = useState(defaults)
   const [searchParams, setSearchParams] = useSearchParams()
 
   const filters = useMemo(() => {
     const next = {}
-    const stableDefaults = defaultsRef.current
 
     Object.entries(stableDefaults).forEach(([key, fallback]) => {
       next[key] = parseValue(searchParams.get(key), fallback)
     })
 
     return next
-  }, [searchParams])
+  }, [searchParams, stableDefaults])
 
-  const updateFilter = (key, value) => {
+  const updateFilter = useCallback((key, value) => {
     const next = new URLSearchParams(searchParams)
-    const fallback = defaultsRef.current[key]
+    const fallback = stableDefaults[key]
     const serialized = Array.isArray(value)
       ? value.join(',')
       : value === ALL_FILTER_VALUE || value === '' || value === null || value === undefined
@@ -47,11 +46,11 @@ export function useFilters(defaults) {
     }
 
     setSearchParams(next, { replace: true })
-  }
+  }, [searchParams, setSearchParams, stableDefaults])
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setSearchParams(new URLSearchParams(), { replace: true })
-  }
+  }, [setSearchParams])
 
   return {
     filters,

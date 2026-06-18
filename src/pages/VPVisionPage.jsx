@@ -1,5 +1,6 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { animate, motion, useInView, useReducedMotion } from 'framer-motion'
 import {
   ArrowRight,
   Camera,
@@ -87,14 +88,74 @@ const evidenceTiles = [
   },
 ]
 
+const premiumEase = [0.22, 1, 0.36, 1]
+const viewportOnce = { once: true, amount: 0.28, margin: '0px 0px -80px 0px' }
+
 function formatNumber(value) {
   return new Intl.NumberFormat('en-US').format(value || 0)
 }
 
-function MetricCard({ label, value, note, icon: Icon, featured = false }) {
+function revealVariant({ shouldReduceMotion, x = 0, y = 18, delay = 0 } = {}) {
+  return {
+    hidden: {
+      opacity: 0,
+      x: shouldReduceMotion ? 0 : x,
+      y: shouldReduceMotion ? 0 : y,
+    },
+    visible: {
+      opacity: 1,
+      x: 0,
+      y: 0,
+      transition: {
+        duration: shouldReduceMotion ? 0 : 0.7,
+        ease: premiumEase,
+        delay: shouldReduceMotion ? 0 : delay,
+      },
+    },
+  }
+}
+
+function CountUpNumber({ value }) {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, amount: 0.65 })
+  const shouldReduceMotion = useReducedMotion()
+  const [displayValue, setDisplayValue] = useState(0)
+
+  useEffect(() => {
+    if (!isInView || shouldReduceMotion) {
+      return undefined
+    }
+
+    const controls = animate(0, value || 0, {
+      duration: 1.1,
+      ease: premiumEase,
+      onUpdate: (latest) => setDisplayValue(latest),
+    })
+
+    return () => controls.stop()
+  }, [isInView, shouldReduceMotion, value])
+
   return (
-    <div
-      className={`group min-h-[172px] rounded-[8px] border bg-white p-5 shadow-[0_14px_40px_rgba(0,0,0,0.045)] transition duration-300 hover:-translate-y-1 ${
+    <p
+      ref={ref}
+      className="font-display mt-5 break-words text-3xl font-semibold leading-none text-black sm:mt-6 sm:text-4xl lg:text-5xl"
+    >
+      {formatNumber(Math.round(shouldReduceMotion ? value || 0 : displayValue))}
+    </p>
+  )
+}
+
+function MetricCard({ label, value, note, icon: Icon, featured = false, index = 0 }) {
+  const shouldReduceMotion = useReducedMotion()
+
+  return (
+    <motion.div
+      variants={revealVariant({ shouldReduceMotion, x: 24, y: 8, delay: index * 0.09 })}
+      initial="hidden"
+      whileInView="visible"
+      viewport={viewportOnce}
+      whileHover={shouldReduceMotion ? undefined : { y: -4 }}
+      className={`group min-h-[150px] min-w-0 overflow-hidden rounded-[8px] border bg-white p-4 shadow-[0_14px_40px_rgba(0,0,0,0.045)] transition-shadow duration-300 sm:min-h-[172px] sm:p-5 ${
         featured ? 'border-[#f1c7cb]' : 'border-[#e5e5e5]'
       }`}
     >
@@ -108,27 +169,32 @@ function MetricCard({ label, value, note, icon: Icon, featured = false }) {
         </span>
         <span className="h-0.5 w-8 bg-[#E20010]" />
       </div>
-      <p className="font-display mt-6 text-4xl font-semibold leading-none text-black sm:text-5xl">
-        {value}
-      </p>
-      <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+      <CountUpNumber value={value} />
+      <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
         {label}
       </p>
       {note ? <p className="mt-2 text-sm text-[#4a4a4a]">{note}</p> : null}
-    </div>
+    </motion.div>
   )
 }
 
 function FlowCard({ step, index }) {
   const Icon = step.icon
+  const shouldReduceMotion = useReducedMotion()
 
   return (
-    <div className="relative flex min-h-[172px] flex-col justify-between rounded-[8px] border border-[#e5e5e5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
+    <motion.div
+      variants={revealVariant({ shouldReduceMotion, y: 18, delay: index * 0.08 })}
+      initial="hidden"
+      whileInView="visible"
+      viewport={viewportOnce}
+      className="relative flex min-h-[150px] min-w-0 flex-col justify-between overflow-hidden rounded-[8px] border border-[#e5e5e5] bg-white p-4 shadow-[0_10px_30px_rgba(0,0,0,0.04)] sm:min-h-[172px] sm:p-5"
+    >
       <div className="flex items-start justify-between gap-3">
         <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f5f2ef] text-black">
           <Icon size={19} />
         </span>
-        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a8a8a8]">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#a8a8a8] sm:tracking-[0.18em]">
           0{index + 1}
         </span>
       </div>
@@ -136,16 +202,21 @@ function FlowCard({ step, index }) {
         <h3 className="mt-6 text-base font-semibold text-black">{step.label}</h3>
         <p className="mt-2 text-sm leading-6 text-[#4a4a4a]">{step.sentence}</p>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
 function BeforeAfterCard({ tone, title, text, icon: Icon, items }) {
   const isAfter = tone === 'after'
+  const shouldReduceMotion = useReducedMotion()
 
   return (
-    <div
-      className={`rounded-[8px] border p-6 sm:p-7 ${
+    <motion.div
+      variants={revealVariant({ shouldReduceMotion, x: isAfter ? 28 : -28, y: 0 })}
+      initial="hidden"
+      whileInView="visible"
+      viewport={viewportOnce}
+      className={`min-w-0 overflow-hidden rounded-[8px] border p-4 sm:p-6 lg:p-7 ${
         isAfter ? 'border-[#f1c7cb] bg-[#fff9fa]' : 'border-[#e5e5e5] bg-white'
       }`}
     >
@@ -165,7 +236,7 @@ function BeforeAfterCard({ tone, title, text, icon: Icon, items }) {
           {title}
         </span>
       </div>
-      <p className="font-display mt-6 text-2xl font-semibold leading-tight text-black sm:text-3xl">
+      <p className="font-display mt-5 text-xl font-semibold leading-tight text-black sm:mt-6 sm:text-2xl md:text-3xl">
         {text}
       </p>
       <div className="mt-6 grid gap-2">
@@ -176,24 +247,32 @@ function BeforeAfterCard({ tone, title, text, icon: Icon, items }) {
           </div>
         ))}
       </div>
-    </div>
+    </motion.div>
   )
 }
 
-function ActionAreaCard({ area }) {
+function ActionAreaCard({ area, index = 0 }) {
   const Icon = area.icon || Factory
+  const shouldReduceMotion = useReducedMotion()
 
   return (
-    <div className="rounded-[8px] border border-[#e5e5e5] bg-white p-5 shadow-[0_10px_30px_rgba(0,0,0,0.035)]">
+    <motion.div
+      variants={revealVariant({ shouldReduceMotion, y: 18, delay: index * 0.06 })}
+      initial="hidden"
+      whileInView="visible"
+      viewport={viewportOnce}
+      whileHover={shouldReduceMotion ? undefined : { y: -5 }}
+      className="min-w-0 overflow-hidden rounded-[8px] border border-[#e5e5e5] bg-white p-4 shadow-[0_10px_30px_rgba(0,0,0,0.035)] sm:p-5"
+    >
       <div className="flex items-start justify-between gap-3">
         <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f5f2ef] text-black">
           <Icon size={19} />
         </span>
         <RiskBadge level={area.riskLevel} compact />
       </div>
-      <h3 className="mt-5 text-lg font-semibold leading-tight text-black">{area.displayLabel}</h3>
-      <div className="mt-5 grid grid-cols-[auto_1fr] gap-x-4 gap-y-3">
-        <p className="font-display text-4xl font-semibold leading-none text-black">
+      <h3 className="mt-5 text-base font-semibold leading-tight text-black sm:text-lg">{area.displayLabel}</h3>
+      <div className="mt-5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3">
+        <p className="font-display text-3xl font-semibold leading-none text-black sm:text-4xl">
           {formatNumber(area.count)}
         </p>
         <div className="self-center">
@@ -203,29 +282,41 @@ function ActionAreaCard({ area }) {
           <p className="mt-1 text-xs font-medium leading-5 text-[#4a4a4a]">{area.owner}</p>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
-function EvidenceTile({ tile, data }) {
+function EvidenceTile({ tile, data, index = 0 }) {
   const Icon = tile.icon
+  const shouldReduceMotion = useReducedMotion()
 
   return (
-    <div className="rounded-[8px] border border-[#e5e5e5] bg-white p-5">
+    <motion.div
+      variants={revealVariant({ shouldReduceMotion, y: 16, delay: index * 0.07 })}
+      initial="hidden"
+      whileInView="visible"
+      viewport={viewportOnce}
+      className="min-w-0 overflow-hidden rounded-[8px] border border-[#e5e5e5] bg-white p-5"
+    >
       <div className="flex items-center justify-between gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f5f2ef] text-black">
+        <motion.span
+          whileHover={shouldReduceMotion ? undefined : { scale: 1.06 }}
+          transition={{ duration: 0.25, ease: premiumEase }}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f5f2ef] text-black"
+        >
           <Icon size={18} />
-        </span>
+        </motion.span>
         <ShieldCheck size={18} className="text-[#E20010]" />
       </div>
       <p className="mt-5 text-sm font-semibold text-black">{tile.label}</p>
       <p className="font-display mt-2 text-2xl font-semibold text-black">{tile.value(data)}</p>
-    </div>
+    </motion.div>
   )
 }
 
 export default function VPVisionPage() {
   const { data } = useDashboardDataset(true)
+  const shouldReduceMotion = useReducedMotion()
 
   const factoryScore = useMemo(
     () => calculateFactoryActionabilityScore(data?.masterReviews || []),
@@ -246,32 +337,38 @@ export default function VPVisionPage() {
   const metrics = [
     {
       label: 'Reviews analyzed',
-      value: formatNumber(data?.masterReviews.length || 0),
+      value: data?.masterReviews.length || 0,
       note: data?.periodRangeLabel || 'Current VOG window',
       icon: MessageSquareQuote,
       featured: true,
     },
     {
       label: 'Images mapped',
-      value: formatNumber(data?.imageItems.length || 0),
+      value: data?.imageItems.length || 0,
       note: 'Customer photo evidence',
       icon: Camera,
     },
     {
       label: 'Factory-actionable issues',
-      value: formatNumber(factoryScore.actionable),
+      value: factoryScore.actionable,
       note: `${factoryScore.actionableShare.toFixed(0)}% routed to production`,
       icon: Factory,
     },
   ]
 
   return (
-    <div className="space-y-16 bg-[#fbfaf8] px-1 pb-8 pt-2 text-black sm:px-2 lg:px-4">
-      <section className="relative overflow-hidden rounded-[8px] border border-[#e5e5e5] bg-[#f7f3ef] px-6 py-8 sm:px-8 lg:px-12 lg:py-12">
+    <div className="bg-[#fbfaf8] pb-8 pt-2 text-black">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-12 px-4 sm:gap-14 sm:px-6 lg:gap-16 lg:px-8 xl:px-10">
+      <motion.section
+        variants={revealVariant({ shouldReduceMotion, y: 20 })}
+        initial="hidden"
+        animate="visible"
+        className="relative mx-auto w-full max-w-7xl overflow-hidden rounded-[8px] border border-[#e5e5e5] bg-[#f7f3ef] px-4 py-8 sm:px-6 md:px-8 lg:px-10 lg:py-12 xl:px-12"
+      >
         <div className="absolute right-0 top-0 hidden h-full w-[34%] border-l border-[#e5e5e5] bg-white/45 lg:block" />
         <div className="relative grid gap-10 lg:grid-cols-[1fr_1.05fr] lg:items-end">
           <div>
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <span className="flex h-12 w-12 items-center justify-center rounded-full border border-[#e5e5e5] bg-white">
                 <img
                   src={LOGO_PATH}
@@ -279,56 +376,75 @@ export default function VPVisionPage() {
                   className="h-11 w-11 rounded-full object-contain"
                 />
               </span>
-              <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#767676]">
+              <span className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.2em]">
                 Guest-to-Factory Intelligence
               </span>
             </div>
-            <h1 className="font-display mt-8 max-w-4xl text-5xl font-semibold leading-[0.95] text-black sm:text-6xl lg:text-7xl">
+            <h1 className="font-display mt-7 max-w-4xl break-words text-4xl font-semibold leading-tight text-black sm:text-5xl md:text-6xl lg:text-7xl lg:leading-[0.95]">
               {'Guest Feedback \u2192 Factory Action'}
             </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-[#3f3a37] sm:text-xl">
+            <p className="mt-5 max-w-2xl text-base leading-7 text-[#3f3a37] sm:text-lg md:text-xl md:leading-8">
               Turning real customer reviews, ratings, and images into clear quality
               improvement priorities.
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            {metrics.map((metric) => (
-              <MetricCard key={metric.label} {...metric} />
+          <div className="grid gap-4 sm:grid-cols-3 lg:min-w-0">
+            {metrics.map((metric, index) => (
+              <MetricCard key={metric.label} {...metric} index={index} />
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <section>
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <motion.section
+        variants={revealVariant({ shouldReduceMotion, y: 14 })}
+        initial="hidden"
+        whileInView="visible"
+        viewport={viewportOnce}
+        className="mx-auto w-full max-w-7xl overflow-hidden"
+      >
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#767676]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.2em]">
               Visual Flow
             </p>
-            <h2 className="font-display mt-2 text-3xl font-semibold tracking-[-0.02em] text-black sm:text-4xl">
+            <h2 className="font-display mt-2 text-2xl font-semibold tracking-normal text-black sm:text-3xl md:text-4xl">
               From signal to action in six moves.
             </h2>
           </div>
-          <span className="rounded-full border border-[#f1c7cb] bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#E20010]">
+          <span className="w-fit rounded-full border border-[#f1c7cb] bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#E20010] sm:tracking-[0.16em]">
             Evidence trail stays visible
           </span>
         </div>
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+        <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 2xl:gap-5">
           {flowSteps.map((step, index) => (
-            <div key={step.label} className="relative">
+            <div key={step.label} className="relative min-w-0">
               <FlowCard step={step} index={index} />
               {index < flowSteps.length - 1 ? (
-                <div className="pointer-events-none absolute -right-3 top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[#e5e5e5] bg-white text-[#E20010] xl:flex">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={viewportOnce}
+                  animate={shouldReduceMotion ? undefined : { x: [0, 5, 0] }}
+                  transition={{
+                    opacity: {
+                      duration: shouldReduceMotion ? 0 : 0.45,
+                      delay: shouldReduceMotion ? 0 : index * 0.08 + 0.2,
+                    },
+                    x: { duration: 1.8, repeat: Infinity, ease: 'easeInOut' },
+                  }}
+                  className="pointer-events-none absolute -right-3 top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[#e5e5e5] bg-white text-[#E20010] xl:flex"
+                >
                   <ArrowRight size={16} />
-                </div>
+                </motion.div>
               ) : null}
             </div>
           ))}
         </div>
-      </section>
+      </motion.section>
 
-      <section className="grid gap-5 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
+      <section className="mx-auto grid w-full max-w-7xl min-w-0 gap-5 overflow-hidden lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center lg:gap-6">
         <BeforeAfterCard
           tone="before"
           title="Before"
@@ -336,9 +452,15 @@ export default function VPVisionPage() {
           icon={MessageSquareQuote}
           items={['Review comments', 'Photo uploads', 'Rating drops']}
         />
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-black text-white lg:h-14 lg:w-14">
+        <motion.div
+          variants={revealVariant({ shouldReduceMotion, y: 0, delay: 0.18 })}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewportOnce}
+          className="mx-auto flex h-12 w-12 rotate-90 items-center justify-center rounded-full bg-black text-white lg:h-14 lg:w-14 lg:rotate-0"
+        >
           <ArrowRight size={22} />
-        </div>
+        </motion.div>
         <BeforeAfterCard
           tone="after"
           title="After"
@@ -348,13 +470,19 @@ export default function VPVisionPage() {
         />
       </section>
 
-      <section>
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <motion.section
+        variants={revealVariant({ shouldReduceMotion, y: 14 })}
+        initial="hidden"
+        whileInView="visible"
+        viewport={viewportOnce}
+        className="mx-auto w-full max-w-7xl overflow-hidden"
+      >
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#767676]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.2em]">
               Factory Action Areas
             </p>
-            <h2 className="font-display mt-2 text-3xl font-semibold tracking-[-0.02em] text-black sm:text-4xl">
+            <h2 className="font-display mt-2 text-2xl font-semibold tracking-normal text-black sm:text-3xl md:text-4xl">
               Six places where guest feedback becomes prevention.
             </h2>
           </div>
@@ -363,43 +491,62 @@ export default function VPVisionPage() {
             Risk, count, owner
           </div>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {actionAreas.map((area) => (
-            <ActionAreaCard key={area.key} area={area} />
+        <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:gap-5 xl:grid-cols-3">
+          {actionAreas.map((area, index) => (
+            <ActionAreaCard key={area.key} area={area} index={index} />
           ))}
         </div>
-      </section>
+      </motion.section>
 
-      <section>
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <motion.section
+        variants={revealVariant({ shouldReduceMotion, y: 14 })}
+        initial="hidden"
+        whileInView="visible"
+        viewport={viewportOnce}
+        className="mx-auto w-full max-w-7xl overflow-hidden"
+      >
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#767676]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.2em]">
               Evidence-Based Decisions
             </p>
-            <h2 className="font-display mt-2 text-3xl font-semibold tracking-[-0.02em] text-black sm:text-4xl">
+            <h2 className="font-display mt-2 text-2xl font-semibold tracking-normal text-black sm:text-3xl md:text-4xl">
               Clear priorities, backed by proof.
             </h2>
           </div>
           <Tag size={22} className="text-[#E20010]" />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {evidenceTiles.map((tile) => (
-            <EvidenceTile key={tile.label} tile={tile} data={data} />
+        <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
+          {evidenceTiles.map((tile, index) => (
+            <EvidenceTile key={tile.label} tile={tile} data={data} index={index} />
           ))}
         </div>
-      </section>
+      </motion.section>
 
-      <section className="relative overflow-hidden rounded-[8px] bg-black px-6 py-8 text-white sm:px-8 lg:px-12 lg:py-10">
-        <div className="absolute right-0 top-0 h-full w-2 bg-[#E20010]" />
+      <motion.section
+        variants={revealVariant({ shouldReduceMotion, y: 18 })}
+        initial="hidden"
+        whileInView="visible"
+        viewport={viewportOnce}
+        className="relative mx-auto w-full max-w-7xl overflow-hidden rounded-[8px] bg-black px-4 py-8 text-white sm:px-6 md:px-8 lg:px-10 lg:py-12 xl:px-12"
+      >
+        <motion.div
+          initial={{ scaleY: shouldReduceMotion ? 1 : 0 }}
+          whileInView={{ scaleY: 1 }}
+          viewport={viewportOnce}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.9, ease: premiumEase }}
+          style={{ transformOrigin: 'top' }}
+          className="absolute right-0 top-0 h-full w-2 bg-[#E20010]"
+        />
         <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
           <div className="max-w-4xl">
             <div className="flex items-center gap-3 text-[#f5f2ef]">
               <ShieldCheck size={20} />
-              <span className="text-[11px] font-semibold uppercase tracking-[0.2em]">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.12em] sm:tracking-[0.2em]">
                 Customer Presentation
               </span>
             </div>
-            <h2 className="font-display mt-5 text-3xl font-semibold leading-tight text-white sm:text-4xl lg:text-5xl">
+            <h2 className="font-display mt-5 text-2xl font-semibold leading-tight text-white sm:text-3xl md:text-4xl lg:text-5xl">
               From Voice of Guest to Preventive Quality Action
             </h2>
             <p className="mt-5 max-w-3xl text-base leading-8 text-[#e7e0da]">
@@ -407,24 +554,29 @@ export default function VPVisionPage() {
               action, and prevent the same defects from reaching future guests.
             </p>
           </div>
-          <div className="flex flex-wrap gap-3 lg:justify-end">
-            <Link
-              to="/vp-vision/analytics"
-              className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-[#E20010] hover:text-white"
-            >
-              View Production Analytics
-              <ArrowRight size={16} />
-            </Link>
-            <Link
-              to="/gallery"
-              className="inline-flex items-center gap-2 rounded-full border border-white/25 px-6 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white/10"
-            >
-              View Evidence Gallery
-              <ArrowRight size={16} />
-            </Link>
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap lg:justify-end">
+            <motion.div whileHover={shouldReduceMotion ? undefined : { y: -2 }} className="w-full sm:w-auto">
+              <Link
+                to="/vp-vision/analytics"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-[#E20010] hover:text-white sm:w-auto sm:px-6"
+              >
+                View Production Analytics
+                <ArrowRight size={16} />
+              </Link>
+            </motion.div>
+            <motion.div whileHover={shouldReduceMotion ? undefined : { y: -2 }} className="w-full sm:w-auto">
+              <Link
+                to="/gallery"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/25 px-5 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white/10 sm:w-auto sm:px-6"
+              >
+                View Evidence Gallery
+                <ArrowRight size={16} />
+              </Link>
+            </motion.div>
           </div>
         </div>
-      </section>
+      </motion.section>
+      </div>
     </div>
   )
 }

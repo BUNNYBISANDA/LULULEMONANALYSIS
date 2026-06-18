@@ -101,7 +101,7 @@ export default function Analytics() {
 
   if (error || !data) {
     return (
-      <Panel className="p-8 text-sm text-[#4a4a4a]">
+      <Panel className="p-4 text-sm text-[#4a4a4a] sm:p-8">
         Analytics could not load right now. Refresh the page and try again.
       </Panel>
     )
@@ -146,7 +146,7 @@ export default function Analytics() {
         />
       </Panel>
 
-      <Panel className="story-grid overflow-hidden p-7 sm:p-8">
+      <Panel className="story-grid overflow-hidden p-4 sm:p-6 lg:p-8">
         <SectionHeader
           eyebrow="Executive Summary"
           title={heroTitle}
@@ -161,11 +161,11 @@ export default function Analytics() {
             </span>
           }
         />
-        <div className="mt-6 flex flex-wrap gap-2">
+        <div className="mt-5 flex flex-wrap gap-2 sm:mt-6">
           {heroPills.map((item) => (
             <span
               key={item}
-              className="rounded-full border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#4a4a4a]"
+              className="max-w-full break-words rounded-full border border-[#e5e5e5] bg-white px-3 py-2 text-xs text-[#4a4a4a] sm:px-4 sm:text-sm"
             >
               {item}
             </span>
@@ -174,12 +174,12 @@ export default function Analytics() {
       </Panel>
 
       {!data.isAllProducts && data.masterReviews.length === 0 ? (
-        <Panel className="border-[#f1c7cb] bg-[#fff9fa] p-6 text-sm font-medium leading-7 text-[#4a4a4a]">
+        <Panel className="border-[#f1c7cb] bg-[#fff9fa] p-4 text-sm font-medium leading-7 text-[#4a4a4a] sm:p-6">
           Historical data available. No recent VOG activity in the selected period.
         </Panel>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         <KpiTile
           label="Total Low-Star Reviews"
           value={data.masterReviews.length}
@@ -228,8 +228,8 @@ export default function Analytics() {
       </div>
 
       {data.isAllProducts ? (
-        <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-          <Panel className="p-7 sm:p-8">
+        <div className="grid gap-5 2xl:grid-cols-[0.95fr_1.05fr]">
+          <Panel className="p-4 sm:p-6 lg:p-8">
             <SectionHeader
               eyebrow="Product Comparison"
               title="Low-star review concentration can now be compared across product styles."
@@ -244,7 +244,7 @@ export default function Analytics() {
               </div>
             ) : null}
             {data.comparisonBarData.length ? (
-              <div className="mt-6 h-[340px]">
+              <div className="mt-6 h-[300px] sm:h-[340px]">
               <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={260}>
                 <BarChart data={data.comparisonBarData} margin={{ top: 8, right: 20, left: 8, bottom: 32 }}>
                   <CartesianGrid stroke="#f0f0f0" vertical={false} />
@@ -304,7 +304,7 @@ export default function Analytics() {
           </Panel>
 
           <Panel className="overflow-hidden">
-            <div className="p-7 sm:p-8">
+            <div className="p-4 sm:p-6 lg:p-8">
               <SectionHeader
                 eyebrow="Product Comparison Table"
                 title="Product-level summary"
@@ -312,8 +312,8 @@ export default function Analytics() {
               />
             </div>
             <div className="overflow-x-auto">
-              <table className="min-w-full text-left">
-                <thead className="bg-white text-[11px] uppercase tracking-[0.18em] text-[#767676]">
+              <table className="min-w-[1120px] text-left">
+                <thead className="bg-white text-[11px] uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
                   <tr>
                     <th className="px-5 py-4">Product Name</th>
                     <th className="px-5 py-4">Category</th>
@@ -360,8 +360,8 @@ export default function Analytics() {
         </div>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[1.5fr_0.85fr]">
-        <Panel className="p-7 sm:p-8">
+      <div className="grid gap-5 xl:grid-cols-[1.5fr_0.85fr]">
+        <Panel className="p-4 sm:p-6 lg:p-8">
           <SectionHeader
             eyebrow="Complaint Themes"
             title="Complaint concentration makes the highest-priority themes hard to ignore."
@@ -376,7 +376,7 @@ export default function Analytics() {
                 title="Complaint themes ranked by low-star review count"
               />
             ) : (
-              <div className="rounded-[20px] border border-[#e5e5e5] bg-[#fafafa] p-6 text-sm text-[#4a4a4a]">
+              <div className="rounded-[20px] border border-[#e5e5e5] bg-[#fafafa] p-4 text-sm text-[#4a4a4a] sm:p-6">
                 No complaint themes found for the selected product and time period.
               </div>
             )}
@@ -384,15 +384,15 @@ export default function Analytics() {
         </Panel>
 
         <div className="space-y-4">
-          <Panel className="p-6">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+          <Panel className="p-4 sm:p-6">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
               Theme Share Breakdown
             </p>
             <div className="mt-4 space-y-4">
               {topThemeBreakdown.length ? (
                 topThemeBreakdown.map((theme, index) => (
                   <div key={theme.slug}>
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start justify-between gap-3 sm:gap-4">
                       <div className="min-w-0">
                         <p
                           className={`text-sm font-medium ${index === 0 ? 'text-[#E20010]' : 'text-[#000000]'}`}
@@ -428,15 +428,15 @@ export default function Analytics() {
             </div>
           </Panel>
 
-          <Panel className="p-6">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+          <Panel className="p-4 sm:p-6">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
               Priority Readout
             </p>
             <div className="mt-4 space-y-4">
               {topThemes.length ? (
                 topThemes.map((theme) => (
                   <div key={theme.slug}>
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                       <p className="text-sm font-medium text-[#000000]">{theme.theme}</p>
                       <p className="text-sm text-[#4a4a4a]">{theme.totalReviews} reviews</p>
                     </div>
@@ -461,7 +461,7 @@ export default function Analytics() {
         </div>
       </div>
 
-      <Panel className="p-7 sm:p-8">
+      <Panel className="p-4 sm:p-6 lg:p-8">
         <SectionHeader
           eyebrow="Monthly Trend"
           title="Low-star signal volume by review month."
@@ -487,8 +487,8 @@ export default function Analytics() {
         </div>
       </Panel>
 
-      <div className="grid gap-6">
-        <Panel className="p-7 sm:p-8">
+      <div className="grid gap-5">
+        <Panel className="p-4 sm:p-6 lg:p-8">
           <SectionHeader
             eyebrow="Ratings Distribution"
             title="Most evidence sits in severe dissatisfaction, but mixed frustration remains meaningful."
@@ -496,7 +496,7 @@ export default function Analytics() {
           />
           {hasRatingsData ? (
             <>
-              <div className="mt-6 h-[340px]">
+              <div className="mt-6 h-[300px] sm:h-[340px]">
                 <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={260}>
                   <PieChart>
                     <Pie
@@ -534,22 +534,22 @@ export default function Analytics() {
               </div>
             </>
           ) : (
-            <div className="mt-6 rounded-[20px] border border-[#e5e5e5] bg-[#fafafa] p-6 text-sm text-[#4a4a4a]">
+            <div className="mt-6 rounded-[20px] border border-[#e5e5e5] bg-[#fafafa] p-4 text-sm text-[#4a4a4a] sm:p-6">
               No rating distribution is available for the selected period.
             </div>
           )}
         </Panel>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <Panel className="p-7 sm:p-8">
+      <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+        <Panel className="p-4 sm:p-6 lg:p-8">
           <SectionHeader
             eyebrow="Image Evidence Preview"
             title="Customer photos show what text alone can miss."
             description="Image-backed reviews are filtered to the same product and time period, keeping visual evidence aligned with the executive readout."
           />
           {imagePreviewItems.length ? (
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="mt-6 grid gap-3 md:grid-cols-2">
               {imagePreviewItems.map((item) => (
                 <Link
                   key={item.key}
@@ -580,13 +580,13 @@ export default function Analytics() {
               ))}
             </div>
           ) : (
-            <div className="mt-6 rounded-[20px] border border-[#e5e5e5] bg-[#fafafa] p-6 text-sm text-[#4a4a4a]">
+            <div className="mt-6 rounded-[20px] border border-[#e5e5e5] bg-[#fafafa] p-4 text-sm text-[#4a4a4a] sm:p-6">
               No image-backed reviews found for this selection.
             </div>
           )}
         </Panel>
 
-        <Panel className="p-7 sm:p-8">
+        <Panel className="p-4 sm:p-6 lg:p-8">
           <SectionHeader
             eyebrow="Recent Critical Reviews"
             title="Review-level evidence keeps the signal grounded."
@@ -638,7 +638,7 @@ export default function Analytics() {
       </div>
 
       <Panel className="overflow-hidden">
-        <div className="p-7 sm:p-8">
+        <div className="p-4 sm:p-6 lg:p-8">
           <SectionHeader
             eyebrow="Category Detail Table"
             title="Theme-by-theme complaint detail remains the reference layer."
@@ -646,8 +646,8 @@ export default function Analytics() {
           />
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full text-left">
-            <thead className="bg-white text-[11px] uppercase tracking-[0.18em] text-[#767676]">
+          <table className="min-w-[820px] text-left">
+            <thead className="bg-white text-[11px] uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
               <tr>
                 <th className="px-5 py-4">Complaint Theme</th>
                 <th className="px-5 py-4">Low-Star Reviews</th>
@@ -685,11 +685,11 @@ export default function Analytics() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Link to="/reviews">
-          <Panel className="p-6 transition duration-300 hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(0,0,0,0.08)]">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+          <Panel className="p-4 transition duration-300 hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(0,0,0,0.08)] sm:p-6">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
               Quick Link
             </p>
-            <h3 className="font-display mt-3 text-2xl font-semibold text-[#000000]">
+            <h3 className="font-display mt-3 text-xl font-semibold text-[#000000] sm:text-2xl">
               Browse all reviews
             </h3>
             <p className="mt-3 inline-flex items-center gap-2 text-sm text-[#4a4a4a]">
@@ -699,11 +699,11 @@ export default function Analytics() {
           </Panel>
         </Link>
         <Link to="/gallery">
-          <Panel className="p-6 transition duration-300 hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(0,0,0,0.08)]">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+          <Panel className="p-4 transition duration-300 hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(0,0,0,0.08)] sm:p-6">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
               Quick Link
             </p>
-            <h3 className="font-display mt-3 text-2xl font-semibold text-[#000000]">
+            <h3 className="font-display mt-3 text-xl font-semibold text-[#000000] sm:text-2xl">
               View image evidence
             </h3>
             <p className="mt-3 inline-flex items-center gap-2 text-sm text-[#4a4a4a]">

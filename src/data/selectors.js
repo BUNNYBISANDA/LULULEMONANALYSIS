@@ -279,6 +279,35 @@ export function mergeUniqueValues(...collections) {
   return [...new Set(collections.flat().filter(Boolean))]
 }
 
+export function buildImageEvidenceItems(originalUrls = [], thumbnailUrls = []) {
+  const originals = Array.isArray(originalUrls) ? originalUrls.filter(Boolean).map(String) : []
+  const thumbnails = Array.isArray(thumbnailUrls) ? thumbnailUrls.filter(Boolean).map(String) : []
+  const count = Math.max(originals.length, thumbnails.length)
+  const seen = new Set()
+  const items = []
+
+  for (let index = 0; index < count; index += 1) {
+    const originalUrl = originals[index] || ''
+    const thumbnailUrl = thumbnails[index] || ''
+    const url = originalUrl || thumbnailUrl
+
+    if (!url || seen.has(url)) {
+      continue
+    }
+
+    seen.add(url)
+    items.push({
+      key: url,
+      url,
+      originalUrl: url,
+      thumbnailUrl: thumbnailUrl || url,
+      isThumbnailOnly: !originalUrl && Boolean(thumbnailUrl),
+    })
+  }
+
+  return items
+}
+
 export function pickFirstValue(...values) {
   for (const value of values) {
     if (hasValue(value)) {
@@ -333,6 +362,9 @@ function normalizeReviews(reviews = []) {
       const complaintTheme =
         pickFirstValue(review.complaint_theme, review.complaintTheme) ||
         inferComplaintTheme({ title, reviewText })
+      const originalImageUrls = parseUrlList(review.photo_urls)
+      const photoThumbnails = parseUrlList(review.photo_thumbnails)
+      const imageEvidence = buildImageEvidenceItems(originalImageUrls, photoThumbnails)
 
       return {
         key: `${pickFirstValue(review.product_id, review.productId)}-${normalizeId(review.review_id || review.reviewId || index)}`,
@@ -399,15 +431,11 @@ function normalizeReviews(reviews = []) {
         height: safeNumber(review.height) || null,
         weight: safeNumber(review.weight) || null,
         badge: pickFirstValue(review.badge, review.incentivized_review_label),
-        photoCount: Math.max(
-          safeNumber(review.photo_count),
-          parseUrlList(review.photo_urls).length,
-        ),
-        imageUrls: mergeUniqueValues(
-          parseUrlList(review.photo_urls),
-          parseUrlList(review.photo_thumbnails),
-        ),
-        photoThumbnails: parseUrlList(review.photo_thumbnails),
+        photoCount: Math.max(safeNumber(review.photo_count), imageEvidence.length),
+        imageUrls: imageEvidence.map((item) => item.url),
+        originalImageUrls,
+        photoThumbnails,
+        imageEvidence,
         totalComments: safeNumber(review.total_comments),
         luluResponseAuthor: pickFirstValue(
           review.lulu_response_author,
@@ -422,39 +450,46 @@ function normalizeReviews(reviews = []) {
 }
 
 function normalizeImages(images = []) {
-  return images.map((item, index) => ({
-    key: `${pickFirstValue(item.product_id, item.productId)}-${normalizeId(item.review_id || item.reviewId || 'image')}-${pickFirstValue(item.photo_id, item.photoId, item.photo_number, index)}`,
-    productName: pickFirstValue(item.product_name, item.productName),
-    productId: pickFirstValue(item.product_id, item.productId),
-    productNameId: pickFirstValue(item.productNameId, item.product_name_id),
-    productUrl: pickFirstValue(item.product_url, item.productUrl),
-    category: pickFirstValue(item.category, item.product_category),
-    reviewId: normalizeId(item.review_id || item.reviewId),
-    rating: safeNumber(item.rating),
-    reviewDate: pickFirstValue(item.review_date, item.reviewDate),
-    dateLabel: formatShortDate(pickFirstValue(item.review_date, item.reviewDate)),
-    reviewTitle: pickFirstValue(item.review_title, item.reviewTitle) || 'Untitled review',
-    reviewText: pickFirstValue(item.review_text, item.reviewText) || 'No review text available.',
-    complaintTheme: pickFirstValue(item.complaint_theme, item.complaintTheme) || 'Other',
-    businessInsight:
-      pickFirstValue(item.business_insight, item.businessInsight) ||
-      themeDetailCopy[pickFirstValue(item.complaint_theme, item.complaintTheme)]?.action ||
-      '',
-    photoId: normalizeId(item.photo_id || item.photoId || item.photo_number || index + 1),
-    photoNumber: safeNumber(item.photo_number || index + 1),
-    imageUrl: pickFirstValue(item.image_url, item.imageUrl),
-    thumbnailUrl: pickFirstValue(item.thumbnail_url, item.thumbnailUrl, item.image_url, item.imageUrl),
-    localImagePath: pickFirstValue(item.local_image_path, item.localImagePath),
-    verifiedBuyer:
-      normalizeOptionalTruth(
-        pickFirstValue(item.verified_buyer, item.verifiedBuyer),
-      ) ?? false,
-    helpfulVotes: safeNumber(pickFirstValue(item.helpful_votes, item.helpfulVotes)),
-    sizePurchased: pickFirstValue(item.size_purchased, item.sizePurchased),
-    fitFeedback: pickFirstValue(item.fit_feedback, item.fitFeedback),
-    imageExists:
-      normalizeOptionalTruth(pickFirstValue(item.image_exists, item.imageExists)) ?? true,
-  }))
+  return images.map((item, index) => {
+    const imageUrl = pickFirstValue(item.image_url, item.imageUrl)
+    const thumbnailUrl = pickFirstValue(item.thumbnail_url, item.thumbnailUrl, imageUrl)
+
+    return {
+      key: `${pickFirstValue(item.product_id, item.productId)}-${normalizeId(item.review_id || item.reviewId || 'image')}-${pickFirstValue(item.photo_id, item.photoId, item.photo_number, index)}`,
+      productName: pickFirstValue(item.product_name, item.productName),
+      productId: pickFirstValue(item.product_id, item.productId),
+      productNameId: pickFirstValue(item.productNameId, item.product_name_id),
+      productUrl: pickFirstValue(item.product_url, item.productUrl),
+      category: pickFirstValue(item.category, item.product_category),
+      reviewId: normalizeId(item.review_id || item.reviewId),
+      rating: safeNumber(item.rating),
+      reviewDate: pickFirstValue(item.review_date, item.reviewDate),
+      dateLabel: formatShortDate(pickFirstValue(item.review_date, item.reviewDate)),
+      reviewTitle: pickFirstValue(item.review_title, item.reviewTitle) || 'Untitled review',
+      reviewText: pickFirstValue(item.review_text, item.reviewText) || 'No review text available.',
+      complaintTheme: pickFirstValue(item.complaint_theme, item.complaintTheme) || 'Other',
+      businessInsight:
+        pickFirstValue(item.business_insight, item.businessInsight) ||
+        themeDetailCopy[pickFirstValue(item.complaint_theme, item.complaintTheme)]?.action ||
+        '',
+      photoId: normalizeId(item.photo_id || item.photoId || item.photo_number || index + 1),
+      photoNumber: safeNumber(item.photo_number || index + 1),
+      imageUrl: imageUrl || thumbnailUrl,
+      originalUrl: imageUrl || thumbnailUrl,
+      thumbnailUrl,
+      isThumbnailOnly: !imageUrl && Boolean(thumbnailUrl),
+      localImagePath: pickFirstValue(item.local_image_path, item.localImagePath),
+      verifiedBuyer:
+        normalizeOptionalTruth(
+          pickFirstValue(item.verified_buyer, item.verifiedBuyer),
+        ) ?? false,
+      helpfulVotes: safeNumber(pickFirstValue(item.helpful_votes, item.helpfulVotes)),
+      sizePurchased: pickFirstValue(item.size_purchased, item.sizePurchased),
+      fitFeedback: pickFirstValue(item.fit_feedback, item.fitFeedback),
+      imageExists:
+        normalizeOptionalTruth(pickFirstValue(item.image_exists, item.imageExists)) ?? true,
+    }
+  })
 }
 
 function normalizeCategorySummary(categorySummary = []) {
@@ -1827,7 +1862,9 @@ export function buildProductionEvidenceWall(reviews = [], images = [], limit = 1
         owner: meta.owner,
         priority: priorityByCategory.get(categoryKey) || 'P3',
         confidenceScore,
-        imageUrl: matchedImage?.thumbnailUrl || matchedImage?.imageUrl || null,
+        imageUrl: matchedImage?.imageUrl || matchedImage?.thumbnailUrl || null,
+        thumbnailUrl: matchedImage?.thumbnailUrl || matchedImage?.imageUrl || null,
+        isThumbnailOnly: !matchedImage?.imageUrl && Boolean(matchedImage?.thumbnailUrl),
         hasImageEvidence: Boolean(review.hasImageEvidence),
       }
     })
@@ -1879,7 +1916,10 @@ export function buildQualityInsightCategories(reviews = [], options = {}) {
       const groupReviews = reviewsByGroup.get(group.key) || []
       const count = groupReviews.length
 
-      const imageTotal = groupReviews.reduce((sum, review) => sum + (review.imageUrls?.length || 0), 0)
+      const imageTotal = groupReviews.reduce(
+        (sum, review) => sum + (review.imageEvidence?.length || review.imageUrls?.length || 0),
+        0,
+      )
       const imageBackedReviewCount = groupReviews.filter((review) => review.hasImageEvidence).length
       const sharePercent = grandTotal ? Number(((count / grandTotal) * 100).toFixed(1)) : 0
       const impactLevel = count ? impactLevelForShare(sharePercent) : 'Low'
@@ -1887,9 +1927,19 @@ export function buildQualityInsightCategories(reviews = [], options = {}) {
 
       const evidenceImages = groupReviews
         .flatMap((review) =>
-          (review.imageUrls || []).map((url) => ({
-            url,
-            key: `${review.key}-${url}`,
+          (review.imageEvidence?.length
+            ? review.imageEvidence
+            : (review.imageUrls || []).map((url) => ({
+                url,
+                originalUrl: url,
+                thumbnailUrl: url,
+                isThumbnailOnly: false,
+              }))
+          ).map((image) => ({
+            url: image.originalUrl || image.url || image.thumbnailUrl,
+            thumbnailUrl: image.thumbnailUrl || image.originalUrl || image.url,
+            isThumbnailOnly: Boolean(image.isThumbnailOnly),
+            key: `${review.key}-${image.originalUrl || image.url || image.thumbnailUrl}`,
             reviewTitle: review.title,
             reviewText: review.reviewText,
             rating: review.rating,

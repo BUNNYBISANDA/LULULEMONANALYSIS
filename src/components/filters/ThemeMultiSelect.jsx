@@ -41,15 +41,15 @@ export default function ThemeMultiSelect({ value = [], options = [], onChange })
   }, [])
 
   return (
-    <div className="relative flex flex-col gap-1" ref={containerRef}>
-      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+    <div className="relative flex min-w-0 flex-col gap-1" ref={containerRef}>
+      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
         Complaint Theme
       </span>
 
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="flex min-h-[42px] items-center justify-between gap-3 rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-left text-sm text-[#000000]"
+        className="flex min-h-[42px] w-full min-w-0 items-center justify-between gap-3 rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-left text-sm text-[#000000]"
         aria-haspopup="listbox"
         aria-expanded={open}
       >
@@ -61,7 +61,7 @@ export default function ThemeMultiSelect({ value = [], options = [], onChange })
       </button>
 
       {open ? (
-        <div className="absolute left-0 top-full z-30 mt-2 w-full min-w-[260px] rounded-[20px] border border-[#e5e5e5] bg-white p-2 shadow-[0_10px_28px_rgba(0,0,0,0.08)]">
+        <div className="absolute left-0 top-full z-30 mt-2 w-full min-w-0 rounded-[20px] border border-[#e5e5e5] bg-white p-2 shadow-[0_10px_28px_rgba(0,0,0,0.08)] sm:min-w-[260px]">
           <div className="max-h-72 overflow-y-auto pr-1">
             <button
               type="button"

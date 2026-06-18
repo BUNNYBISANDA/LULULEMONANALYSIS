@@ -1,84 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, ExternalLink, Minus, Plus, RotateCcw, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ExternalLink, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import RatingBadge from '../primitives/RatingBadge'
-import { useImageZoom } from '../../hooks/useImageZoom'
-
-function ZoomableGalleryImage({ imageUrl, alt }) {
-  const {
-    scale,
-    position,
-    rotation,
-    canZoomIn,
-    canZoomOut,
-    zoomIn,
-    zoomOut,
-    reset,
-    handleWheel,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-  } = useImageZoom(imageUrl)
-
-  return (
-    <>
-      <div
-        className={`flex h-full w-full items-center justify-center overflow-hidden ${
-          scale > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-zoom-in'
-        }`}
-        onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-      >
-        <img
-          src={imageUrl}
-          alt={alt}
-          draggable={false}
-          className="max-h-[70vh] w-full select-none object-contain"
-          style={{
-            transform: `translate3d(${position.x}px, ${position.y}px, 0) rotate(${rotation}deg) scale(${scale})`,
-            transformOrigin: 'center center',
-            transition: scale === 1 ? 'transform 150ms ease' : 'none',
-          }}
-        />
-      </div>
-      <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-white px-3 py-2 shadow-lg">
-        <button
-          type="button"
-          onClick={zoomOut}
-          disabled={!canZoomOut}
-          aria-label="Zoom out"
-          className="rounded-full p-2 text-black transition hover:bg-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-30"
-        >
-          <Minus size={16} />
-        </button>
-        <span className="w-12 text-center text-xs font-semibold text-black">
-          {Math.round(scale * 100)}%
-        </span>
-        <button
-          type="button"
-          onClick={zoomIn}
-          disabled={!canZoomIn}
-          aria-label="Zoom in"
-          className="rounded-full p-2 text-black transition hover:bg-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-30"
-        >
-          <Plus size={16} />
-        </button>
-        <span className="mx-1 h-5 w-px bg-[#e5e5e5]" />
-        <button
-          type="button"
-          onClick={reset}
-          aria-label="Reset zoom"
-          className="rounded-full p-2 text-black transition hover:bg-[#f5f5f5]"
-        >
-          <RotateCcw size={16} />
-        </button>
-      </div>
-    </>
-  )
-}
+import ZoomableImageFrame from '../ZoomableImageFrame'
 
 export default function Lightbox({ items = [], activeIndex, onClose, onChange }) {
   const activeItem = items[activeIndex] || null
@@ -94,6 +18,9 @@ export default function Lightbox({ items = [], activeIndex, onClose, onChange })
       return undefined
     }
 
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
     function handleKeydown(event) {
       if (event.key === 'Escape') {
         onClose()
@@ -107,7 +34,10 @@ export default function Lightbox({ items = [], activeIndex, onClose, onChange })
     }
 
     window.addEventListener('keydown', handleKeydown)
-    return () => window.removeEventListener('keydown', handleKeydown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', handleKeydown)
+    }
   }, [activeIndex, activeItem, items.length, onChange, onClose])
 
   if (!activeItem) {
@@ -116,17 +46,17 @@ export default function Lightbox({ items = [], activeIndex, onClose, onChange })
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-3 py-4 sm:px-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl lg:flex-row"
+        className="relative flex max-h-[92dvh] w-full max-w-[95vw] flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl lg:max-w-6xl lg:flex-row"
         onClick={(event) => event.stopPropagation()}
       >
         <div
-          className="relative flex min-h-[320px] flex-1 items-center justify-center bg-black lg:max-w-[52%]"
+          className="relative flex min-h-[240px] max-h-[60vh] flex-1 items-center justify-center bg-black sm:min-h-[320px] lg:max-h-none lg:max-w-[52%]"
           onTouchStart={(event) => setTouchStart(event.touches[0]?.clientX || null)}
           onTouchEnd={(event) => {
             const current = event.changedTouches[0]?.clientX || null
@@ -143,10 +73,16 @@ export default function Lightbox({ items = [], activeIndex, onClose, onChange })
             }
           }}
         >
-          <ZoomableGalleryImage
+          <ZoomableImageFrame
             key={activeItem.key}
             imageUrl={activeItem.imageUrl}
             alt={activeItem.reviewTitle}
+            sourceKind={activeItem.isThumbnailOnly ? 'thumbnail' : 'original'}
+            className="h-full w-full"
+            maxViewportWidth="100%"
+            maxViewportHeight="70vh"
+            controlsClassName="absolute bottom-3 left-1/2 flex max-w-[90vw] -translate-x-1/2 items-center gap-2 overflow-x-auto rounded-full bg-white px-3 py-2 shadow-lg sm:bottom-4 sm:max-w-none"
+            buttonClassName="rounded-full p-2 text-black transition hover:bg-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-30"
           />
           <button
             type="button"
@@ -168,13 +104,13 @@ export default function Lightbox({ items = [], activeIndex, onClose, onChange })
           </button>
         </div>
 
-        <div className="flex w-full flex-col overflow-y-auto p-6 lg:max-w-[48%]">
+        <div className="flex w-full flex-col overflow-y-auto p-4 sm:p-6 lg:max-w-[48%]">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
                 Photo Evidence
               </p>
-              <h3 className="font-display mt-3 text-2xl font-semibold tracking-[-0.04em] text-[#000000]">
+              <h3 className="font-display mt-3 break-words text-xl font-semibold tracking-normal text-[#000000] sm:text-2xl">
                 {activeItem.reviewTitle}
               </h3>
             </div>
@@ -190,7 +126,7 @@ export default function Lightbox({ items = [], activeIndex, onClose, onChange })
 
           <div className="mt-5 flex flex-wrap items-center gap-2">
             <RatingBadge rating={activeItem.rating} compact />
-            <span className="rounded-full bg-[#fafafa] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#767676]">
+            <span className="rounded-full bg-[#fafafa] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.16em]">
               {activeItem.complaintTheme}
             </span>
             <span className="rounded-full border border-[#e5e5e5] bg-white px-3 py-1 text-[11px] font-medium text-[#4a4a4a]">
@@ -208,13 +144,13 @@ export default function Lightbox({ items = [], activeIndex, onClose, onChange })
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl border border-[#e5e5e5] bg-white p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
                   Helpful votes
                 </p>
                 <p className="mt-2 text-sm text-[#000000]">{activeItem.helpfulVotes}</p>
               </div>
               <div className="rounded-2xl border border-[#e5e5e5] bg-white p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
                   Size / Fit
                 </p>
                 <p className="mt-2 text-sm text-[#000000]">

@@ -82,8 +82,19 @@ export default function Reviews() {
   useExportRegistration(exportConfig)
 
   useEffect(() => {
-    setCurrentPage(1)
-    setSelectedIndex(0)
+    let active = true
+    queueMicrotask(() => {
+      if (!active) {
+        return
+      }
+
+      setCurrentPage(1)
+      setSelectedIndex(0)
+    })
+
+    return () => {
+      active = false
+    }
   }, [filters, selectedTimePeriod])
 
   useEffect(() => {
@@ -92,11 +103,13 @@ export default function Reviews() {
       return
     }
 
-    resetFilters()
-    setExpandedIds([])
-    setCurrentPage(1)
-    setSelectedIndex(0)
-  }, [selectedProductId])
+    queueMicrotask(() => {
+      resetFilters()
+      setExpandedIds([])
+      setCurrentPage(1)
+      setSelectedIndex(0)
+    })
+  }, [resetFilters, selectedProductId])
 
   useEffect(() => {
     const targetId = searchParams.get('id')
@@ -111,9 +124,20 @@ export default function Reviews() {
       return
     }
 
-    setExpandedIds((current) => (current.includes(targetId) ? current : [...current, targetId]))
-    setCurrentPage(Math.floor(rowIndex / ROWS_PER_PAGE) + 1)
-    setSelectedIndex(rowIndex % ROWS_PER_PAGE)
+    let active = true
+    queueMicrotask(() => {
+      if (!active) {
+        return
+      }
+
+      setExpandedIds((current) => (current.includes(targetId) ? current : [...current, targetId]))
+      setCurrentPage(Math.floor(rowIndex / ROWS_PER_PAGE) + 1)
+      setSelectedIndex(rowIndex % ROWS_PER_PAGE)
+    })
+
+    return () => {
+      active = false
+    }
   }, [filteredReviews, searchParams])
 
   const totalPages = Math.max(1, Math.ceil(filteredReviews.length / ROWS_PER_PAGE))
@@ -158,12 +182,16 @@ export default function Reviews() {
   }
 
   if (error || !data) {
-    return <Panel className="p-8 text-sm text-[#4a4a4a]">Reviews explorer could not load.</Panel>
+    return (
+      <Panel className="p-4 text-sm text-[#4a4a4a] sm:p-8">
+        Reviews explorer could not load.
+      </Panel>
+    )
   }
 
   return (
     <div className="space-y-6">
-      <Panel className="p-7 sm:p-8">
+      <Panel className="p-4 sm:p-6 lg:p-8">
         <Link to="/analytics" className="text-sm text-[#767676] hover:text-[#000000]">
           {'<- Back to Analytics'}
         </Link>
@@ -192,15 +220,15 @@ export default function Reviews() {
             meta={`Selected period: ${data.selectedTimePeriod}. Showing ${data.periodRangeLabel}.`}
           />
         </div>
-        <div className="grid flex-1 gap-3 xl:grid-cols-[0.8fr_1.3fr_0.8fr_auto_0.8fr]">
-          <label className="flex flex-col gap-1 text-sm text-[#4a4a4a]">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+        <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-2 xl:grid-cols-[0.8fr_1.3fr_0.8fr_auto_0.8fr]">
+          <label className="flex min-w-0 flex-col gap-1 text-sm text-[#4a4a4a]">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
               Rating
             </span>
             <select
               value={filters.rating}
               onChange={(event) => updateFilter('rating', event.target.value)}
-              className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000]"
+              className="w-full min-w-0 rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000]"
             >
               <option value={ALL_FILTER_VALUE}>All Ratings</option>
               <option value="1">1 Star</option>
@@ -213,14 +241,14 @@ export default function Reviews() {
             options={data.themeOptions}
             onChange={(value) => updateFilter('themes', value)}
           />
-          <label className="flex flex-col gap-1 text-sm text-[#4a4a4a]">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+          <label className="flex min-w-0 flex-col gap-1 text-sm text-[#4a4a4a]">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
               Verified
             </span>
             <select
               value={filters.verified}
               onChange={(event) => updateFilter('verified', event.target.value)}
-              className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000]"
+              className="w-full min-w-0 rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000]"
             >
               <option value={ALL_FILTER_VALUE}>All</option>
               <option value="true">Verified only</option>
@@ -228,14 +256,14 @@ export default function Reviews() {
             </select>
           </label>
           <DateRangePicker from={filters.from} to={filters.to} onChange={updateFilter} />
-          <label className="flex flex-col gap-1 text-sm text-[#4a4a4a]">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+          <label className="flex min-w-0 flex-col gap-1 text-sm text-[#4a4a4a]">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
               Sort
             </span>
             <select
               value={filters.sort}
               onChange={(event) => updateFilter('sort', event.target.value)}
-              className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000]"
+              className="w-full min-w-0 rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000]"
             >
               <option value="newest">Newest</option>
               <option value="oldest">Oldest</option>
@@ -275,7 +303,7 @@ export default function Reviews() {
       </FilterBar>
 
       <Panel className="overflow-hidden">
-        <div className="flex items-center justify-between gap-4 border-b border-[#f0f0f0] px-5 py-4 text-sm text-[#4a4a4a]">
+        <div className="flex flex-col gap-1 border-b border-[#f0f0f0] px-4 py-4 text-sm text-[#4a4a4a] sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5">
           <p>
             Showing <span className="font-semibold text-[#000000]">{filteredReviews.length}</span> of{' '}
             <span className="font-semibold text-[#000000]">{data.masterReviews.length}</span>{' '}
@@ -295,20 +323,28 @@ export default function Reviews() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full text-left">
-              <thead className="bg-white text-[11px] uppercase tracking-[0.18em] text-[#767676]">
+            <table className="min-w-[1080px] text-left">
+              <thead className="bg-white text-[11px] uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
                 <tr>
-                  {visibleColumns.rating ? <th className="px-5 py-4">Rating</th> : null}
-                  {visibleColumns.date ? <th className="px-5 py-4">Date</th> : null}
-                  {visibleColumns.product ? <th className="px-5 py-4">Product</th> : null}
-                  {visibleColumns.theme ? <th className="px-5 py-4">Theme</th> : null}
-                  {visibleColumns.reviewId ? <th className="px-5 py-4">Review ID</th> : null}
-                  {visibleColumns.title ? <th className="px-5 py-4">Title</th> : null}
-                  {visibleColumns.text ? <th className="px-5 py-4">Review Text</th> : null}
-                  {visibleColumns.fit ? <th className="px-5 py-4">Fit Feedback</th> : null}
-                  {visibleColumns.images ? <th className="px-5 py-4">Photo</th> : null}
+                  {visibleColumns.rating ? <th className="px-4 py-4 sm:px-5">Rating</th> : null}
+                  {visibleColumns.date ? <th className="px-4 py-4 sm:px-5">Date</th> : null}
+                  {visibleColumns.product ? (
+                    <th className="px-4 py-4 sm:px-5">Product</th>
+                  ) : null}
+                  {visibleColumns.theme ? <th className="px-4 py-4 sm:px-5">Theme</th> : null}
+                  {visibleColumns.reviewId ? (
+                    <th className="px-4 py-4 sm:px-5">Review ID</th>
+                  ) : null}
+                  {visibleColumns.title ? <th className="px-4 py-4 sm:px-5">Title</th> : null}
+                  {visibleColumns.text ? (
+                    <th className="px-4 py-4 sm:px-5">Review Text</th>
+                  ) : null}
+                  {visibleColumns.fit ? (
+                    <th className="px-4 py-4 sm:px-5">Fit Feedback</th>
+                  ) : null}
+                  {visibleColumns.images ? <th className="px-4 py-4 sm:px-5">Photo</th> : null}
                   {visibleColumns.response ? (
-                    <th className="px-5 py-4">Lululemon Response</th>
+                    <th className="px-4 py-4 sm:px-5">Lululemon Response</th>
                   ) : null}
                 </tr>
               </thead>
@@ -325,7 +361,7 @@ export default function Reviews() {
                         }`}
                       >
                         {visibleColumns.rating ? (
-                          <td className="px-5 py-4">
+                          <td className="px-4 py-4 sm:px-5">
                             <button
                               type="button"
                               onClick={() =>
@@ -343,44 +379,46 @@ export default function Reviews() {
                           </td>
                         ) : null}
                         {visibleColumns.date ? (
-                          <td className="px-5 py-4 text-sm text-[#4a4a4a]">
+                          <td className="px-4 py-4 text-sm text-[#4a4a4a] sm:px-5">
                             {formatShortDate(review.reviewDate)}
                           </td>
                         ) : null}
                         {visibleColumns.product ? (
-                          <td className="min-w-48 px-5 py-4 text-sm font-medium text-[#000000]">
+                          <td className="min-w-48 px-4 py-4 text-sm font-medium text-[#000000] sm:px-5">
                             {review.productName || '-'}
                           </td>
                         ) : null}
                         {visibleColumns.theme ? (
-                          <td className="px-5 py-4">
-                            <span className="rounded-full bg-[#fafafa] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#767676]">
+                          <td className="px-4 py-4 sm:px-5">
+                            <span className="rounded-full bg-[#fafafa] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.16em]">
                               {review.complaintTheme}
                             </span>
                           </td>
                         ) : null}
                         {visibleColumns.reviewId ? (
-                          <td className="px-5 py-4 text-sm text-[#4a4a4a]">{review.reviewId}</td>
+                          <td className="px-4 py-4 text-sm text-[#4a4a4a] sm:px-5">
+                            {review.reviewId}
+                          </td>
                         ) : null}
                         {visibleColumns.title ? (
-                          <td className="px-5 py-4 font-medium text-[#000000]">
+                          <td className="px-4 py-4 font-medium text-[#000000] sm:px-5">
                             {review.title || 'Untitled review'}
                           </td>
                         ) : null}
                         {visibleColumns.text ? (
-                          <td className="max-w-xl px-5 py-4 text-sm leading-7 text-[#4a4a4a]">
+                          <td className="max-w-xl px-4 py-4 text-sm leading-7 text-[#4a4a4a] sm:px-5">
                             {truncateText(review.reviewText, 160)}
                           </td>
                         ) : null}
                         {visibleColumns.fit ? (
-                          <td className="min-w-40 px-5 py-4 text-sm text-[#4a4a4a]">
+                          <td className="min-w-40 px-4 py-4 text-sm text-[#4a4a4a] sm:px-5">
                             {review.fitFeedback || 'Not specified'}
                           </td>
                         ) : null}
                         {visibleColumns.images ? (
-                          <td className="px-5 py-4">
+                          <td className="px-4 py-4 sm:px-5">
                             {review.hasImageEvidence ? (
-                              <span className="rounded-full bg-[#ffe5e8] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#E20010]">
+                              <span className="rounded-full bg-[#ffe5e8] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#E20010] sm:tracking-[0.16em]">
                                 Photo
                               </span>
                             ) : (
@@ -389,9 +427,9 @@ export default function Reviews() {
                           </td>
                         ) : null}
                         {visibleColumns.response ? (
-                          <td className="px-5 py-4">
+                          <td className="px-4 py-4 sm:px-5">
                             {hasValue(review.luluResponseText) ? (
-                              <span className="rounded-full bg-[#edf6f0] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#1f6f3e]">
+                              <span className="rounded-full bg-[#edf6f0] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1f6f3e] sm:tracking-[0.16em]">
                                 Response
                               </span>
                             ) : (
@@ -406,11 +444,11 @@ export default function Reviews() {
                             colSpan={
                               columnDefinitions.filter((column) => visibleColumns[column.key]).length
                             }
-                            className="px-5 py-5"
+                            className="px-4 py-5 sm:px-5"
                           >
                             <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
                               <div>
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
                                   Full Review
                                 </p>
                                 <p className="mt-3 text-sm leading-7 text-[#4a4a4a]">
@@ -423,7 +461,7 @@ export default function Reviews() {
                                 ) : null}
                                 {review.luluResponseText ? (
                                   <div className="mt-4 rounded-[20px] border border-[#e5e5e5] bg-white p-4">
-                                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
                                       lululemon Response
                                     </p>
                                     <p className="mt-3 text-sm leading-7 text-[#4a4a4a]">
@@ -434,7 +472,7 @@ export default function Reviews() {
                               </div>
                               <div className="space-y-4">
                                 <div className="rounded-[20px] border border-[#e5e5e5] bg-white p-4">
-                                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+                                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
                                     Review Metadata
                                   </p>
                                   <ul className="mt-3 space-y-2 text-sm text-[#4a4a4a]">
@@ -446,23 +484,38 @@ export default function Reviews() {
                                     <li>Usual size: {review.usualSize || 'Not specified'}</li>
                                   </ul>
                                 </div>
-                                {review.imageUrls.length ? (
+                                {(review.imageEvidence?.length || review.imageUrls.length) ? (
                                   <div className="rounded-[20px] border border-[#e5e5e5] bg-white p-4">
-                                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
                                       Photos
                                     </p>
-                                    <div className="mt-3 grid grid-cols-3 gap-2">
-                                      {review.imageUrls.slice(0, 6).map((url) => (
+                                    <div className="mt-3 grid grid-cols-2 gap-2 min-[430px]:grid-cols-3">
+                                      {(review.imageEvidence?.length
+                                        ? review.imageEvidence
+                                        : review.imageUrls.map((url) => ({
+                                            url,
+                                            thumbnailUrl: url,
+                                            isThumbnailOnly: false,
+                                          }))
+                                      )
+                                        .slice(0, 6)
+                                        .map((image) => (
                                         <button
-                                          key={url}
+                                          key={image.url}
                                           type="button"
                                           onClick={() =>
-                                            setLightboxImage({ url, alt: review.title })
+                                            setLightboxImage({
+                                              url: image.url,
+                                              alt: review.title,
+                                              sourceKind: image.isThumbnailOnly
+                                                ? 'thumbnail'
+                                                : 'original',
+                                            })
                                           }
                                           className="overflow-hidden rounded-2xl bg-[#f5f5f5]"
                                         >
                                           <img
-                                            src={url}
+                                            src={image.thumbnailUrl || image.url}
                                             alt={review.title}
                                             loading="lazy"
                                             className="aspect-square h-full w-full object-cover"
@@ -474,8 +527,11 @@ export default function Reviews() {
                                       type="button"
                                       onClick={() =>
                                         setLightboxImage({
-                                          url: review.imageUrls[0],
+                                          url: review.imageEvidence?.[0]?.url || review.imageUrls[0],
                                           alt: review.title,
+                                          sourceKind: review.imageEvidence?.[0]?.isThumbnailOnly
+                                            ? 'thumbnail'
+                                            : 'original',
                                         })
                                       }
                                       className="mt-3 inline-flex items-center gap-1 text-sm text-[#767676] hover:text-[#000000]"
@@ -498,12 +554,12 @@ export default function Reviews() {
           </div>
         )}
 
-        <div className="flex items-center justify-between gap-4 border-t border-black/8 px-5 py-4">
+        <div className="flex flex-col gap-3 border-t border-black/8 px-4 py-4 min-[430px]:flex-row min-[430px]:items-center min-[430px]:justify-between sm:px-5">
           <button
             type="button"
             onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
             disabled={currentPage === 1}
-            className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000] disabled:opacity-40"
+            className="w-full rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000] disabled:opacity-40 min-[430px]:w-auto"
           >
             Previous
           </button>
@@ -511,7 +567,7 @@ export default function Reviews() {
             type="button"
             onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
             disabled={currentPage === totalPages}
-            className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000] disabled:opacity-40"
+            className="w-full rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000] disabled:opacity-40 min-[430px]:w-auto"
           >
             Next
           </button>
@@ -521,6 +577,7 @@ export default function Reviews() {
       <ImageLightbox
         imageUrl={lightboxImage?.url}
         alt={lightboxImage?.alt}
+        sourceKind={lightboxImage?.sourceKind}
         isOpen={Boolean(lightboxImage)}
         onClose={() => setLightboxImage(null)}
       />

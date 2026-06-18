@@ -10,8 +10,17 @@ export default function DashboardLayout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
-    setMobileOpen(false)
+    let active = true
+    queueMicrotask(() => {
+      if (active) {
+        setMobileOpen(false)
+      }
+    })
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+
+    return () => {
+      active = false
+    }
   }, [location.pathname])
 
   return (
@@ -24,7 +33,7 @@ export default function DashboardLayout({ children }) {
         />
         <main
           key={location.pathname}
-          className="mx-auto w-full max-w-[1680px] px-3 py-5 sm:px-5 sm:py-6 lg:px-6 xl:px-8"
+          className="mx-auto w-full max-w-[1680px] overflow-hidden px-4 py-5 sm:px-5 sm:py-6 md:px-6 lg:px-8"
           data-export-root="true"
         >
           {children}

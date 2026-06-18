@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { LOGO_PATH, navRoutes } from '../../data/constants'
@@ -15,6 +16,19 @@ export default function MobileNav({ open, onClose }) {
   } = useProductFilter()
   const isVisionPage = location.pathname === '/'
 
+  useEffect(() => {
+    if (!open) {
+      return undefined
+    }
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [open])
+
   if (!open) {
     return null
   }
@@ -27,10 +41,10 @@ export default function MobileNav({ open, onClose }) {
         onClick={onClose}
         aria-label="Close navigation"
       />
-      <aside className="absolute right-0 top-0 flex h-full w-[86vw] max-w-sm flex-col border-l border-[#e5e5e5] bg-white px-5 py-5 shadow-2xl">
+      <aside className="absolute right-0 top-0 flex h-full w-[92vw] max-w-sm flex-col overflow-y-auto border-l border-[#e5e5e5] bg-white px-4 py-5 shadow-2xl sm:px-5">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
               Navigation
             </p>
             <Link to="/" onClick={onClose} className="mt-2 flex items-center gap-3">
@@ -41,11 +55,11 @@ export default function MobileNav({ open, onClose }) {
                   className="h-8 w-8 rounded-full object-contain"
                 />
               </span>
-              <span className="text-[13px] font-bold uppercase tracking-[0.18em] text-[#000000]">
+              <span className="truncate text-[13px] font-bold uppercase tracking-[0.14em] text-[#000000] sm:tracking-[0.18em]">
                 LULULEMON
               </span>
             </Link>
-            <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.18em] text-[#767676]">
+            <p className="mt-2 max-w-[15rem] text-[11px] font-medium uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
               {dashboardTitle}
             </p>
           </div>

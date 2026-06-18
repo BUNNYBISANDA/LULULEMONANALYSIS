@@ -59,23 +59,25 @@ const futurePhase = [
 
 function PhaseList({ title, eyebrow, items, icon: Icon }) {
   return (
-    <Panel className="p-6 sm:p-7">
+    <Panel className="p-4 sm:p-6 lg:p-7">
       <div className="flex items-start gap-4">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#e5e5e5] bg-[#fafafa] text-black">
           <Icon size={20} />
         </span>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
             {eyebrow}
           </p>
-          <h3 className="font-display mt-2 text-2xl font-semibold text-black">{title}</h3>
+          <h3 className="font-display mt-2 break-words text-xl font-semibold text-black sm:text-2xl">
+            {title}
+          </h3>
         </div>
       </div>
       <ul className="mt-6 space-y-3">
         {items.map((item) => (
-          <li key={item} className="flex items-center gap-3 text-sm text-[#4a4a4a]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#E20010]" />
-            {item}
+          <li key={item} className="flex items-start gap-3 text-sm text-[#4a4a4a]">
+            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#E20010]" />
+            <span className="min-w-0">{item}</span>
           </li>
         ))}
       </ul>
@@ -86,10 +88,10 @@ function PhaseList({ title, eyebrow, items, icon: Icon }) {
 export default function VisionPage() {
   return (
     <div className="space-y-10">
-      <section className="relative overflow-hidden rounded-[28px] border border-[#e5e5e5] bg-[#fafafa] px-6 py-10 sm:px-10 lg:px-14 lg:py-14">
+      <section className="relative overflow-hidden rounded-[24px] border border-[#e5e5e5] bg-[#fafafa] px-4 py-8 sm:rounded-[28px] sm:px-6 sm:py-10 lg:px-14 lg:py-14">
         <div className="grid gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
-          <div>
-            <div className="flex items-center gap-3">
+          <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-3">
               <span className="flex h-11 w-11 items-center justify-center rounded-full border border-[#e5e5e5] bg-white">
                 <img
                   src={LOGO_PATH}
@@ -97,14 +99,14 @@ export default function VisionPage() {
                   className="h-10 w-10 rounded-full object-contain"
                 />
               </span>
-              <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#767676]">
+              <span className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
                 Quality Signal Platform
               </span>
             </div>
-            <h1 className="font-display mt-7 max-w-4xl text-5xl font-semibold leading-[0.95] tracking-[-0.04em] text-black sm:text-6xl lg:text-7xl">
+            <h1 className="font-display mt-7 max-w-4xl break-words text-4xl font-semibold leading-tight tracking-normal text-black sm:text-5xl lg:text-7xl">
               Voice of Guest Intelligence
             </h1>
-            <p className="mt-5 text-xl font-semibold text-black">
+            <p className="mt-5 text-lg font-semibold text-black sm:text-xl">
               Turning guest feedback into product quality signals.
             </p>
             <p className="mt-5 max-w-3xl text-base leading-8 text-[#4a4a4a]">
@@ -115,7 +117,7 @@ export default function VisionPage() {
             <div className="mt-8">
               <Link
                 to="/analytics"
-                className="inline-flex items-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#E20010]"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#E20010] sm:w-auto"
               >
                 View VOG Dashboard
                 <ArrowRight size={16} />
@@ -130,7 +132,7 @@ export default function VisionPage() {
               return (
                 <div
                   key={step.label}
-                  className="flex items-center gap-4 rounded-[20px] border border-[#e5e5e5] bg-white px-5 py-4"
+                  className="flex min-w-0 items-center gap-4 rounded-[20px] border border-[#e5e5e5] bg-white px-4 py-4 sm:px-5"
                 >
                   <span
                     className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
@@ -140,10 +142,10 @@ export default function VisionPage() {
                     <Icon size={18} />
                   </span>
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#767676]">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
                       Signal {index + 1}
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-black">{step.label}</p>
+                    <p className="mt-1 min-w-0 text-sm font-semibold text-black">{step.label}</p>
                   </div>
                 </div>
               )
@@ -157,11 +159,11 @@ export default function VisionPage() {
           const Icon = card.icon
 
           return (
-            <Panel key={card.title} className="p-6 sm:p-7">
+            <Panel key={card.title} className="p-4 sm:p-6 lg:p-7">
               <span className="flex h-11 w-11 items-center justify-center rounded-full border border-[#e5e5e5] bg-[#fafafa] text-black">
                 <Icon size={20} />
               </span>
-              <h2 className="font-display mt-5 text-2xl font-semibold text-black">
+              <h2 className="font-display mt-5 text-xl font-semibold text-black sm:text-2xl">
                 {card.title}
               </h2>
               <p className="mt-3 text-sm leading-7 text-[#4a4a4a]">{card.text}</p>
@@ -170,7 +172,7 @@ export default function VisionPage() {
         })}
       </section>
 
-      <Panel className="p-7 sm:p-8">
+      <Panel className="p-4 sm:p-6 lg:p-8">
         <SectionHeader
           eyebrow="Intelligence Pipeline"
           title="From guest signal to quality decision support."
@@ -181,12 +183,12 @@ export default function VisionPage() {
             const Icon = step.icon
 
             return (
-              <div key={step.label} className="flex flex-1 items-center gap-3">
+              <div key={step.label} className="flex min-w-0 flex-1 items-center gap-3">
                 <div className="flex min-h-[88px] flex-1 items-center gap-3 rounded-[20px] border border-[#e5e5e5] bg-white px-4 py-4">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fafafa] text-black">
                     <Icon size={18} />
                   </span>
-                  <p className="text-sm font-semibold text-black">{step.label}</p>
+                  <p className="min-w-0 text-sm font-semibold text-black">{step.label}</p>
                 </div>
                 {index < pipelineSteps.length - 1 ? (
                   <ArrowRight className="hidden shrink-0 text-[#767676] xl:block" size={18} />
@@ -219,8 +221,8 @@ export default function VisionPage() {
         </div>
       </section>
 
-      <Panel className="border-[#f1c7cb] bg-[#fff9fa] p-7 sm:p-8">
-        <p className="max-w-5xl text-lg font-semibold leading-8 text-black">
+      <Panel className="border-[#f1c7cb] bg-[#fff9fa] p-4 sm:p-6 lg:p-8">
+        <p className="max-w-5xl text-base font-semibold leading-7 text-black sm:text-lg sm:leading-8">
           The current version focuses on VOG. The next phase can connect VOP data to
           compare guest complaint patterns against internal production and quality signals.
         </p>
