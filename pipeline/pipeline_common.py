@@ -5,6 +5,7 @@ import json
 import os
 import re
 import time
+import uuid
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,8 +13,6 @@ from typing import Any
 from urllib.parse import urlsplit
 
 import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
 
 PIPELINE_DIR = Path(__file__).resolve().parent
@@ -113,14 +112,31 @@ query GetReviews(
       }
     }
     totalResults
-    hasAdditionalReviews
-    limit
-    offset
     errors {
       message
       code
     }
+    hasAdditionalReviews
     hasErrors
+    limit
+    offset
+    stats {
+      averageOverallRating
+      features {
+        averageRating
+        featureId
+      }
+      fitsRating {
+        range
+        label
+        rating
+      }
+      ratingDistribution {
+        numberOfResults
+        ratingValue
+      }
+      totalReviewCount
+    }
   }
 }
 """.strip()
@@ -503,11 +519,16 @@ def read_csv_rows(path: Path) -> list[dict[str, str]]:
 
 
 def write_csv_rows(path: Path, rows: list[dict[str, Any]], fieldnames: list[str]) -> None:
+    from io import StringIO
+
+    from pipeline.storage.atomic_exporter import atomic_write_text
+
+    buffer = StringIO()
+    writer = csv.DictWriter(buffer, fieldnames=fieldnames, extrasaction="ignore")
+    writer.writeheader()
+    writer.writerows(rows)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", newline="", encoding="utf-8-sig") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames, extrasaction="ignore")
-        writer.writeheader()
-        writer.writerows(rows)
+    atomic_write_text(path, buffer.getvalue(), encoding="utf-8-sig")
 
 
 def read_json(path: Path, default: Any = None) -> Any:
@@ -517,11 +538,10 @@ def read_json(path: Path, default: Any = None) -> Any:
 
 
 def write_json(path: Path, payload: Any) -> None:
+    from pipeline.storage.atomic_exporter import atomic_write_json
+
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False),
-        encoding="utf-8",
-    )
+    atomic_write_json(path, payload)
 
 
 def read_products(path: Path = PRODUCTS_CSV) -> list[dict[str, str]]:
@@ -552,14 +572,22 @@ def read_products(path: Path = PRODUCTS_CSV) -> list[dict[str, str]]:
 def build_headers(product_url: str) -> dict[str, str]:
     headers = {
         "accept": "application/json",
+        "accept-language": "en-US,en;q=0.9",
         "content-type": "application/json",
         "origin": "https://shop.lululemon.com",
         "referer": product_url,
         "user-agent": (
-            "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) "
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/148.0.0.0 Mobile Safari/537.36"
+            "Chrome/150.0.0.0 Safari/537.36 Edg/150.0.0.0"
         ),
+        "priority": "u=1, i",
+        "sec-ch-ua": '"Not;A=Brand";v="8", "Chromium";v="150", "Microsoft Edge";v="150"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-origin",
         "x-lll-client": "pdp-reviews-component",
         "x-lll-client-repo-name": "product-experiences",
         "x-lll-locale": "en-US",
@@ -572,19 +600,7 @@ def build_headers(product_url: str) -> dict[str, str]:
 
 
 def build_session() -> requests.Session:
-    retry = Retry(
-        total=5,
-        connect=5,
-        read=5,
-        backoff_factor=1,
-        status_forcelist=[429, 500, 502, 503, 504],
-        allowed_methods=frozenset(["GET", "POST"]),
-    )
-    adapter = HTTPAdapter(max_retries=retry, pool_connections=8, pool_maxsize=8)
-    session = requests.Session()
-    session.mount("https://", adapter)
-    session.mount("http://", adapter)
-    return session
+    return requests.Session()
 
 
 def build_payload(
@@ -610,6 +626,11 @@ def build_payload(
     }
 
 
+def serialize_graphql_payload(payload: dict[str, Any]) -> str:
+    serialized = json.dumps(payload, ensure_ascii=True, separators=(",", ":"))
+    return serialized.replace("String!", "String\\u0021")
+
+
 def fetch_reviews_page(
     session: requests.Session,
     *,
@@ -628,13 +649,16 @@ def fetch_reviews_page(
         sort=sort,
     )
     headers = build_headers(product["product_url"])
+    headers["x-lll-ecom-correlation-id"] = str(uuid.uuid4()).upper()
+    headers["x-lll-request-correlation-id"] = str(uuid.uuid4())
+    body = serialize_graphql_payload(payload)
 
     for attempt in range(1, DEFAULT_MAX_ATTEMPTS + 1):
         try:
             response = session.post(
                 GRAPHQL_ENDPOINT,
                 headers=headers,
-                json=payload,
+                data=body,
                 timeout=timeout,
             )
             if response.status_code == 403:

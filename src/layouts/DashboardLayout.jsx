@@ -25,7 +25,7 @@ export default function DashboardLayout({ children }) {
 
   return (
     <ExportProvider>
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-[#fafafa]">
         <Header onOpenMobileNav={() => setMobileOpen(true)} />
         <MobileNav
           open={mobileOpen}

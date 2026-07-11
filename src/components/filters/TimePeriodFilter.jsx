@@ -7,8 +7,8 @@ export default function TimePeriodFilter({ meta = '', className = '' }) {
   return (
     <div className={`flex min-w-0 flex-col gap-2 ${className}`}>
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
-          Time Period
+        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#767676]">
+          Period
         </span>
         <div className="inline-flex max-w-full overflow-x-auto rounded-full border border-[#e5e5e5] bg-white p-1">
           {TIME_PERIOD_OPTIONS.map((option) => {

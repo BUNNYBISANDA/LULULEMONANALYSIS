@@ -5,8 +5,8 @@
     "productNameId": "Define_Jacket_Nulu",
     "category": "Jackets",
     "complaint_theme": "Sizing & Fit",
-    "total_reviews": 212,
-    "one_star": 78,
+    "total_reviews": 215,
+    "one_star": 81,
     "two_star": 45,
     "three_star": 89,
     "share_percentage": 40.8
@@ -21,7 +21,7 @@
     "one_star": 44,
     "two_star": 33,
     "three_star": 55,
-    "share_percentage": 25.4
+    "share_percentage": 25.0
   },
   {
     "product_name": "Define Jacket Nulu",
@@ -29,11 +29,11 @@
     "productNameId": "Define_Jacket_Nulu",
     "category": "Jackets",
     "complaint_theme": "Customer Service",
-    "total_reviews": 33,
-    "one_star": 24,
+    "total_reviews": 36,
+    "one_star": 27,
     "two_star": 2,
     "three_star": 7,
-    "share_percentage": 6.3
+    "share_percentage": 6.8
   },
   {
     "product_name": "Define Jacket Nulu",
@@ -45,7 +45,7 @@
     "one_star": 26,
     "two_star": 2,
     "three_star": 3,
-    "share_percentage": 6.0
+    "share_percentage": 5.9
   },
   {
     "product_name": "Define Jacket Nulu",
@@ -57,7 +57,7 @@
     "one_star": 9,
     "two_star": 7,
     "three_star": 13,
-    "share_percentage": 5.6
+    "share_percentage": 5.5
   },
   {
     "product_name": "Define Jacket Nulu",
@@ -69,7 +69,7 @@
     "one_star": 22,
     "two_star": 2,
     "three_star": 5,
-    "share_percentage": 5.6
+    "share_percentage": 5.5
   },
   {
     "product_name": "Define Jacket Nulu",
@@ -81,7 +81,7 @@
     "one_star": 7,
     "two_star": 5,
     "three_star": 5,
-    "share_percentage": 3.3
+    "share_percentage": 3.2
   },
   {
     "product_name": "Define Jacket Nulu",
@@ -101,11 +101,11 @@
     "productNameId": "Define_Jacket_Nulu",
     "category": "Jackets",
     "complaint_theme": "Stitching & Construction",
-    "total_reviews": 11,
-    "one_star": 4,
+    "total_reviews": 12,
+    "one_star": 5,
     "two_star": 4,
     "three_star": 3,
-    "share_percentage": 2.1
+    "share_percentage": 2.3
   },
   {
     "product_name": "Define Jacket Nulu",
@@ -221,8 +221,8 @@
     "productNameId": "Pace_Breaker_Short_NF_7_Lined_Update",
     "category": "Mens Shorts",
     "complaint_theme": "Sizing & Fit",
-    "total_reviews": 80,
-    "one_star": 35,
+    "total_reviews": 82,
+    "one_star": 37,
     "two_star": 21,
     "three_star": 24,
     "share_percentage": 50.0
@@ -233,11 +233,11 @@
     "productNameId": "Pace_Breaker_Short_NF_7_Lined_Update",
     "category": "Mens Shorts",
     "complaint_theme": "Fabric & Material Quality",
-    "total_reviews": 31,
-    "one_star": 17,
+    "total_reviews": 32,
+    "one_star": 18,
     "two_star": 6,
     "three_star": 8,
-    "share_percentage": 19.4
+    "share_percentage": 19.5
   },
   {
     "product_name": "Q123 Pace Breaker 7\" Lined",
@@ -249,7 +249,19 @@
     "one_star": 9,
     "two_star": 1,
     "three_star": 2,
-    "share_percentage": 7.5
+    "share_percentage": 7.3
+  },
+  {
+    "product_name": "Q123 Pace Breaker 7\" Lined",
+    "product_id": "q123_pace_breaker_7_lined",
+    "productNameId": "Pace_Breaker_Short_NF_7_Lined_Update",
+    "category": "Mens Shorts",
+    "complaint_theme": "Other",
+    "total_reviews": 10,
+    "one_star": 9,
+    "two_star": 1,
+    "three_star": 0,
+    "share_percentage": 6.1
   },
   {
     "product_name": "Q123 Pace Breaker 7\" Lined",
@@ -261,19 +273,7 @@
     "one_star": 7,
     "two_star": 1,
     "three_star": 2,
-    "share_percentage": 6.2
-  },
-  {
-    "product_name": "Q123 Pace Breaker 7\" Lined",
-    "product_id": "q123_pace_breaker_7_lined",
-    "productNameId": "Pace_Breaker_Short_NF_7_Lined_Update",
-    "category": "Mens Shorts",
-    "complaint_theme": "Other",
-    "total_reviews": 9,
-    "one_star": 8,
-    "two_star": 1,
-    "three_star": 0,
-    "share_percentage": 5.6
+    "share_percentage": 6.1
   },
   {
     "product_name": "Q123 Pace Breaker 7\" Lined",
@@ -285,7 +285,7 @@
     "one_star": 7,
     "two_star": 0,
     "three_star": 0,
-    "share_percentage": 4.4
+    "share_percentage": 4.3
   },
   {
     "product_name": "Q123 Pace Breaker 7\" Lined",
@@ -297,7 +297,7 @@
     "one_star": 4,
     "two_star": 1,
     "three_star": 1,
-    "share_percentage": 3.8
+    "share_percentage": 3.7
   },
   {
     "product_name": "Q123 Pace Breaker 7\" Lined",
@@ -341,11 +341,11 @@
     "productNameId": "Sculpt_Tank_Top",
     "category": "Women Tanks",
     "complaint_theme": "Sizing & Fit",
-    "total_reviews": 41,
-    "one_star": 12,
-    "two_star": 11,
-    "three_star": 18,
-    "share_percentage": 53.9
+    "total_reviews": 48,
+    "one_star": 14,
+    "two_star": 14,
+    "three_star": 20,
+    "share_percentage": 55.2
   },
   {
     "product_name": "SP25 Sculpt Tank FT",
@@ -353,11 +353,23 @@
     "productNameId": "Sculpt_Tank_Top",
     "category": "Women Tanks",
     "complaint_theme": "Fabric & Material Quality",
-    "total_reviews": 14,
-    "one_star": 6,
+    "total_reviews": 16,
+    "one_star": 7,
     "two_star": 5,
-    "three_star": 3,
+    "three_star": 4,
     "share_percentage": 18.4
+  },
+  {
+    "product_name": "SP25 Sculpt Tank FT",
+    "product_id": "sp25_sculpt_tank_ft",
+    "productNameId": "Sculpt_Tank_Top",
+    "category": "Women Tanks",
+    "complaint_theme": "Customer Service",
+    "total_reviews": 5,
+    "one_star": 1,
+    "two_star": 1,
+    "three_star": 3,
+    "share_percentage": 5.7
   },
   {
     "product_name": "SP25 Sculpt Tank FT",
@@ -369,7 +381,7 @@
     "one_star": 1,
     "two_star": 2,
     "three_star": 2,
-    "share_percentage": 6.6
+    "share_percentage": 5.7
   },
   {
     "product_name": "SP25 Sculpt Tank FT",
@@ -381,19 +393,7 @@
     "one_star": 0,
     "two_star": 0,
     "three_star": 4,
-    "share_percentage": 5.3
-  },
-  {
-    "product_name": "SP25 Sculpt Tank FT",
-    "product_id": "sp25_sculpt_tank_ft",
-    "productNameId": "Sculpt_Tank_Top",
-    "category": "Women Tanks",
-    "complaint_theme": "Customer Service",
-    "total_reviews": 4,
-    "one_star": 0,
-    "two_star": 1,
-    "three_star": 3,
-    "share_percentage": 5.3
+    "share_percentage": 4.6
   },
   {
     "product_name": "SP25 Sculpt Tank FT",
@@ -405,7 +405,7 @@
     "one_star": 1,
     "two_star": 2,
     "three_star": 1,
-    "share_percentage": 5.3
+    "share_percentage": 4.6
   },
   {
     "product_name": "SP25 Sculpt Tank FT",
@@ -413,11 +413,11 @@
     "productNameId": "Sculpt_Tank_Top",
     "category": "Women Tanks",
     "complaint_theme": "Other",
-    "total_reviews": 2,
+    "total_reviews": 3,
     "one_star": 1,
     "two_star": 1,
-    "three_star": 0,
-    "share_percentage": 2.6
+    "three_star": 1,
+    "share_percentage": 3.4
   },
   {
     "product_name": "SP25 Sculpt Tank FT",
@@ -429,7 +429,7 @@
     "one_star": 1,
     "two_star": 0,
     "three_star": 0,
-    "share_percentage": 1.3
+    "share_percentage": 1.1
   },
   {
     "product_name": "SP25 Sculpt Tank FT",
@@ -441,6 +441,6 @@
     "one_star": 1,
     "two_star": 0,
     "three_star": 0,
-    "share_percentage": 1.3
+    "share_percentage": 1.1
   }
 ]

@@ -4,12 +4,11 @@ const fs = require('fs')
 const path = require('path')
 const { parse } = require('csv-parse/sync')
 
-const connectDB = require('../config/db')
-const Product = require('../models/Product')
-const Review = require('../models/Review')
-const ReviewImage = require('../models/ReviewImage')
-const ProductSummary = require('../models/ProductSummary')
-const CategorySummary = require('../models/CategorySummary')
+const { getPool, closePool } = require('../config/db')
+
+const REVIEW_BATCH_SIZE = 500
+const IMAGE_BATCH_SIZE = 1000
+const SUMMARY_BATCH_SIZE = 1000
 
 function cleanText(value) {
   if (value === null || value === undefined) {
@@ -59,7 +58,7 @@ function splitList(value) {
         return parsed.map(cleanText).filter(Boolean)
       }
     } catch (_error) {
-      // Fall back to delimiter-based parsing.
+      // Fall back to delimiter-based parsing below.
     }
   }
   return text
@@ -81,7 +80,7 @@ function normalizeKeys(row) {
   return {
     productId: cleanText(pick(row.productId, row.product_id)),
     productName: cleanText(pick(row.productName, row.product_name)),
-    productNameId: cleanText(pick(row.productNameId, row.product_name_id, row.productNameId)),
+    productNameId: cleanText(pick(row.productNameId, row.product_name_id)),
     productUrl: cleanText(pick(row.productUrl, row.product_url)),
     category: cleanText(row.category),
     reviewId: cleanText(pick(row.reviewId, row.review_id)),
@@ -124,143 +123,157 @@ function resolveProcessedDir() {
   throw new Error(`Could not find processed pipeline data. Tried: ${candidates.join(', ')}`)
 }
 
-function buildReviewDoc(row) {
+function buildProductRow(row) {
+  const normalized = normalizeKeys(row)
+  return {
+    product_id: normalized.productId,
+    product_name: normalized.productName,
+    product_name_id: normalized.productNameId,
+    product_url: normalized.productUrl,
+    category: normalized.category,
+  }
+}
+
+function buildReviewRow(row) {
   const normalized = normalizeKeys(row)
   const photoUrls = splitList(pick(row.photoUrls, row.photo_urls))
-  const reviewerNameOrId = cleanText(pick(row.reviewerNameOrId, row.author))
+  const photoCount = toNumber(pick(row.photoCount, row.photo_count))
   return {
-    productId: normalized.productId,
-    productName: normalized.productName,
-    productNameId: normalized.productNameId,
-    productUrl: normalized.productUrl,
-    category: normalized.category,
-    reviewId: normalized.reviewId,
+    product_id: normalized.productId,
+    review_id: normalized.reviewId,
     rating: toNumber(row.rating),
-    reviewTitle: normalized.reviewTitle,
-    reviewText: normalized.reviewText,
-    reviewDate: toDate(normalized.reviewDate),
-    reviewerNameOrId,
-    verifiedBuyer: toBoolean(pick(row.verifiedBuyer, row.verified_buyer, row.is_verified_buyer)),
-    sizePurchased: cleanText(pick(row.sizePurchased, row.size_purchased)),
-    usualSize: cleanText(pick(row.usualSize, row.usual_size)),
-    fitFeedback: cleanText(pick(row.fitFeedback, row.fit_feedback)),
-    helpfulVotes: toNumber(pick(row.helpfulVotes, row.helpful_votes, row.likes)),
-    hasPhoto: toNumber(pick(row.photoCount, row.photo_count)) > 0 || photoUrls.length > 0,
-    photoCount: toNumber(pick(row.photoCount, row.photo_count)),
-    photoUrls,
-    luluResponseText: cleanText(pick(row.luluResponseText, row.lulu_response_text)),
-    luluResponseDate: toDate(pick(row.luluResponseDate, row.lulu_response_time)),
-    complaintTheme: normalized.complaintTheme || 'Other',
-    businessInsight: normalized.businessInsight,
-    scrapedAt: toDate(pick(row.scrapedAt, row.scraped_at)),
+    review_title: normalized.reviewTitle,
+    review_text: normalized.reviewText,
+    review_date: toDate(normalized.reviewDate),
+    reviewer_name_or_id: cleanText(pick(row.reviewerNameOrId, row.author)),
+    verified_buyer: toBoolean(pick(row.verifiedBuyer, row.verified_buyer, row.is_verified_buyer)),
+    size_purchased: cleanText(pick(row.sizePurchased, row.size_purchased)),
+    usual_size: cleanText(pick(row.usualSize, row.usual_size)),
+    fit_feedback: cleanText(pick(row.fitFeedback, row.fit_feedback)),
+    helpful_votes: toNumber(pick(row.helpfulVotes, row.helpful_votes, row.likes)),
+    has_photo: photoCount > 0 || photoUrls.length > 0,
+    photo_count: photoCount,
+    photo_urls: photoUrls,
+    lulu_response_text: cleanText(pick(row.luluResponseText, row.lulu_response_text)),
+    lulu_response_date: toDate(pick(row.luluResponseDate, row.lulu_response_time)),
+    complaint_theme: normalized.complaintTheme || 'Other',
+    business_insight: normalized.businessInsight,
+    scraped_at: toDate(pick(row.scrapedAt, row.scraped_at)),
+    content_hash: cleanText(pick(row.contentHash, row.content_hash)) || null,
+    source_payload_hash: cleanText(pick(row.sourcePayloadHash, row.source_payload_hash)) || null,
+    raw_payload: JSON.stringify(row),
   }
 }
 
-function buildReviewImageDoc(row) {
+function buildImageRow(row) {
   const normalized = normalizeKeys(row)
   return {
-    productId: normalized.productId,
-    productName: normalized.productName,
-    productNameId: normalized.productNameId,
-    category: normalized.category,
-    reviewId: normalized.reviewId,
+    product_id: normalized.productId,
+    review_id: normalized.reviewId,
+    photo_id: cleanText(pick(row.photoId, row.photo_id)),
     rating: toNumber(row.rating),
-    reviewDate: toDate(normalized.reviewDate),
-    reviewTitle: normalized.reviewTitle,
-    reviewText: normalized.reviewText,
-    complaintTheme: normalized.complaintTheme || 'Other',
-    businessInsight: normalized.businessInsight,
-    imageUrl: normalized.imageUrl,
-    thumbnailUrl: cleanText(pick(row.thumbnailUrl, row.thumbnail_url)),
-    localImagePath: normalized.localImagePath,
-    photoId: cleanText(pick(row.photoId, row.photo_id)),
-    photoCaption: cleanText(pick(row.photoCaption, row.photo_caption)),
-    imageExists: row.imageExists !== undefined ? toBoolean(row.imageExists) : true,
+    review_date: toDate(normalized.reviewDate),
+    review_title: normalized.reviewTitle,
+    review_text: normalized.reviewText,
+    complaint_theme: normalized.complaintTheme || 'Other',
+    business_insight: normalized.businessInsight,
+    image_url: normalized.imageUrl,
+    thumbnail_url: cleanText(pick(row.thumbnailUrl, row.thumbnail_url)),
+    local_image_path: normalized.localImagePath,
+    photo_caption: cleanText(pick(row.photoCaption, row.photo_caption)),
+    image_exists: row.imageExists !== undefined ? toBoolean(row.imageExists) : true,
   }
 }
 
-function buildProductSummaryDoc(row) {
+function buildProductSummaryRow(row) {
   const normalized = normalizeKeys(row)
   return {
-    productId: normalized.productId,
-    productName: normalized.productName,
+    product_id: normalized.productId,
+    product_name: normalized.productName,
     category: normalized.category,
-    totalReviews: toNumber(pick(row.totalReviews, row.total_reviews)),
-    lowStarReviews: toNumber(pick(row.lowStarReviews, row.low_star_reviews)),
-    oneStarReviews: toNumber(pick(row.oneStarReviews, row.one_star_reviews)),
-    twoStarReviews: toNumber(pick(row.twoStarReviews, row.two_star_reviews)),
-    threeStarReviews: toNumber(pick(row.threeStarReviews, row.three_star_reviews)),
-    reviewsWithImages: toNumber(pick(row.reviewsWithImages, row.reviews_with_images)),
-    totalImages: toNumber(pick(row.totalImages, row.total_images)),
-    topComplaintTheme: cleanText(pick(row.topComplaintTheme, row.top_complaint_theme)) || 'Other',
-    topComplaintShare: toNumber(pick(row.topComplaintShare, row.top_complaint_share)),
+    total_reviews: toNumber(pick(row.totalReviews, row.total_reviews)),
+    low_star_reviews: toNumber(pick(row.lowStarReviews, row.low_star_reviews)),
+    one_star_reviews: toNumber(pick(row.oneStarReviews, row.one_star_reviews)),
+    two_star_reviews: toNumber(pick(row.twoStarReviews, row.two_star_reviews)),
+    three_star_reviews: toNumber(pick(row.threeStarReviews, row.three_star_reviews)),
+    reviews_with_images: toNumber(pick(row.reviewsWithImages, row.reviews_with_images)),
+    total_images: toNumber(pick(row.totalImages, row.total_images)),
+    top_complaint_theme: cleanText(pick(row.topComplaintTheme, row.top_complaint_theme)) || 'Other',
+    top_complaint_share: toNumber(pick(row.topComplaintShare, row.top_complaint_share)),
   }
 }
 
-function buildCategorySummaryDoc(row) {
+function buildCategorySummaryRow(row) {
   const normalized = normalizeKeys(row)
   return {
-    productId: normalized.productId,
-    productName: normalized.productName,
+    product_id: normalized.productId,
+    product_name: normalized.productName,
     category: normalized.category,
-    complaintTheme: normalized.complaintTheme || 'Other',
-    totalReviews: toNumber(pick(row.totalReviews, row.total_reviews)),
-    oneStar: toNumber(pick(row.oneStar, row.one_star)),
-    twoStar: toNumber(pick(row.twoStar, row.two_star)),
-    threeStar: toNumber(pick(row.threeStar, row.three_star)),
-    sharePercentage: toNumber(pick(row.sharePercentage, row.share_percentage)),
+    complaint_theme: normalized.complaintTheme || 'Other',
+    total_reviews: toNumber(pick(row.totalReviews, row.total_reviews)),
+    one_star: toNumber(pick(row.oneStar, row.one_star)),
+    two_star: toNumber(pick(row.twoStar, row.two_star)),
+    three_star: toNumber(pick(row.threeStar, row.three_star)),
+    share_percentage: toNumber(pick(row.sharePercentage, row.share_percentage)),
   }
 }
 
-function buildProductDoc(row) {
-  const normalized = normalizeKeys(row)
-  return {
-    productName: normalized.productName,
-    productId: normalized.productId,
-    productNameId: normalized.productNameId,
-    productUrl: normalized.productUrl,
-    category: normalized.category,
-  }
-}
-
-function mergePreferExisting(base, patch) {
+function mergePreferNonEmpty(base, patch) {
   const merged = { ...base }
-
   for (const [key, value] of Object.entries(patch)) {
-    const normalized = cleanText(value)
-    if (normalized) {
+    if (cleanText(value)) {
       merged[key] = value
     } else if (!(key in merged)) {
       merged[key] = value
     }
   }
-
   return merged
 }
 
-async function upsertCollection({ Model, rows, filterBuilder, updateBuilder }) {
+async function batchUpsert(client, { schemaTable, columns, conflictColumns, rows, batchSize }) {
+  const stats = { processed: rows.length, inserted: 0, updated: 0 }
   if (!rows.length) {
-    return { processed: 0, inserted: 0, modified: 0, matchedExisting: 0 }
+    return stats
   }
 
-  const operations = rows.map((row) => ({
-    updateOne: {
-      filter: filterBuilder(row),
-      update: { $set: updateBuilder(row) },
-      upsert: true,
-    },
-  }))
+  const updateAssignments = columns
+    .filter((column) => !conflictColumns.includes(column))
+    .map((column) => `${column} = EXCLUDED.${column}`)
+    .concat(['updated_at = NOW()'])
+    .join(', ')
 
-  const result = await Model.bulkWrite(operations, { ordered: false })
-  return {
-    processed: rows.length,
-    inserted: result.upsertedCount || 0,
-    modified: result.modifiedCount || 0,
-    matchedExisting: result.matchedCount || 0,
+  for (let start = 0; start < rows.length; start += batchSize) {
+    const chunk = rows.slice(start, start + batchSize)
+    const params = []
+    const valueTuples = chunk.map((row) => {
+      const placeholders = columns.map((column) => {
+        params.push(row[column])
+        return `$${params.length}`
+      })
+      return `(${placeholders.join(', ')})`
+    })
+
+    const sql = `
+      INSERT INTO ${schemaTable} (${columns.join(', ')})
+      VALUES ${valueTuples.join(', ')}
+      ON CONFLICT (${conflictColumns.join(', ')}) DO UPDATE SET ${updateAssignments}
+      RETURNING (xmax = 0) AS inserted
+    `
+    const result = await client.query(sql, params)
+    for (const row of result.rows) {
+      if (row.inserted) {
+        stats.inserted += 1
+      } else {
+        stats.updated += 1
+      }
+    }
   }
+
+  return stats
 }
 
 async function main() {
+  const startedAt = Date.now()
   const processedDir = resolveProcessedDir()
   const allReviewsJsonPath = path.join(processedDir, 'all_reviews.json')
   const allReviewsCsvPath = path.join(processedDir, 'all_reviews.csv')
@@ -271,97 +284,185 @@ async function main() {
   const allReviewRows = fs.existsSync(allReviewsJsonPath)
     ? parseJson(allReviewsJsonPath)
     : parseCsv(allReviewsCsvPath)
-  const reviewImageRows = parseCsv(reviewImagesCsvPath)
-  const productSummaryRows = parseCsv(productSummaryCsvPath)
-  const categorySummaryRows = parseCsv(categorySummaryCsvPath)
+  const reviewImageRows = fs.existsSync(reviewImagesCsvPath) ? parseCsv(reviewImagesCsvPath) : []
+  const productSummaryRows = fs.existsSync(productSummaryCsvPath)
+    ? parseCsv(productSummaryCsvPath)
+    : []
+  const categorySummaryRows = fs.existsSync(categorySummaryCsvPath)
+    ? parseCsv(categorySummaryCsvPath)
+    : []
 
   const productMap = new Map()
   for (const row of allReviewRows) {
-    const product = buildProductDoc(row)
-    if (product.productId) {
-      productMap.set(product.productId, product)
+    const product = buildProductRow(row)
+    if (product.product_id) {
+      productMap.set(product.product_id, product)
     }
   }
   for (const row of productSummaryRows) {
-    const summaryProduct = buildProductDoc(row)
-    if (summaryProduct.productId) {
-      const existing = productMap.get(summaryProduct.productId) || {}
-      productMap.set(summaryProduct.productId, mergePreferExisting(existing, summaryProduct))
+    const summaryProduct = buildProductRow(row)
+    if (summaryProduct.product_id) {
+      const existing = productMap.get(summaryProduct.product_id) || {}
+      productMap.set(summaryProduct.product_id, mergePreferNonEmpty(existing, summaryProduct))
     }
   }
 
-  await connectDB()
+  const pool = getPool()
+  const client = await pool.connect()
 
-  const productResult = await upsertCollection({
-    Model: Product,
-    rows: [...productMap.values()],
-    filterBuilder: (row) => ({ productId: row.productId }),
-    updateBuilder: buildProductDoc,
-  })
+  try {
+    await client.query('BEGIN')
 
-  const reviewResult = await upsertCollection({
-    Model: Review,
-    rows: allReviewRows,
-    filterBuilder: (row) => {
-      const normalized = normalizeKeys(row)
-      return { productId: normalized.productId, reviewId: normalized.reviewId }
-    },
-    updateBuilder: buildReviewDoc,
-  })
+    const productResult = await batchUpsert(client, {
+      schemaTable: 'catalog.products',
+      columns: ['product_id', 'product_name', 'product_name_id', 'product_url', 'category'],
+      conflictColumns: ['product_id'],
+      rows: [...productMap.values()],
+      batchSize: SUMMARY_BATCH_SIZE,
+    })
 
-  const imageResult = await upsertCollection({
-    Model: ReviewImage,
-    rows: reviewImageRows,
-    filterBuilder: (row) => {
-      const normalized = normalizeKeys(row)
-      return {
-        productId: normalized.productId,
-        reviewId: normalized.reviewId,
-        photoId: cleanText(pick(row.photoId, row.photo_id)),
-      }
-    },
-    updateBuilder: buildReviewImageDoc,
-  })
+    const reviewRows = allReviewRows.map(buildReviewRow).filter((row) => row.product_id && row.review_id)
+    const reviewResult = await batchUpsert(client, {
+      schemaTable: 'reviews.reviews',
+      columns: [
+        'product_id',
+        'review_id',
+        'rating',
+        'review_title',
+        'review_text',
+        'review_date',
+        'reviewer_name_or_id',
+        'verified_buyer',
+        'size_purchased',
+        'usual_size',
+        'fit_feedback',
+        'helpful_votes',
+        'has_photo',
+        'photo_count',
+        'photo_urls',
+        'lulu_response_text',
+        'lulu_response_date',
+        'complaint_theme',
+        'business_insight',
+        'scraped_at',
+        'content_hash',
+        'source_payload_hash',
+        'raw_payload',
+      ],
+      conflictColumns: ['product_id', 'review_id'],
+      rows: reviewRows,
+      batchSize: REVIEW_BATCH_SIZE,
+    })
 
-  const productSummaryResult = await upsertCollection({
-    Model: ProductSummary,
-    rows: productSummaryRows,
-    filterBuilder: (row) => ({ productId: normalizeKeys(row).productId }),
-    updateBuilder: buildProductSummaryDoc,
-  })
+    const imageRows = reviewImageRows
+      .map(buildImageRow)
+      .filter((row) => row.product_id && row.review_id)
+    const imageResult = await batchUpsert(client, {
+      schemaTable: 'reviews.review_images',
+      columns: [
+        'product_id',
+        'review_id',
+        'photo_id',
+        'rating',
+        'review_date',
+        'review_title',
+        'review_text',
+        'complaint_theme',
+        'business_insight',
+        'image_url',
+        'thumbnail_url',
+        'local_image_path',
+        'photo_caption',
+        'image_exists',
+      ],
+      conflictColumns: ['product_id', 'review_id', 'photo_id'],
+      rows: imageRows,
+      batchSize: IMAGE_BATCH_SIZE,
+    })
 
-  const categorySummaryResult = await upsertCollection({
-    Model: CategorySummary,
-    rows: categorySummaryRows,
-    filterBuilder: (row) => {
-      const normalized = normalizeKeys(row)
-      return { productId: normalized.productId, complaintTheme: normalized.complaintTheme }
-    },
-    updateBuilder: buildCategorySummaryDoc,
-  })
+    const productSummaryUpsertRows = productSummaryRows
+      .map(buildProductSummaryRow)
+      .filter((row) => row.product_id)
+    const productSummaryResult = await batchUpsert(client, {
+      schemaTable: 'analytics.product_summaries',
+      columns: [
+        'product_id',
+        'product_name',
+        'category',
+        'total_reviews',
+        'low_star_reviews',
+        'one_star_reviews',
+        'two_star_reviews',
+        'three_star_reviews',
+        'reviews_with_images',
+        'total_images',
+        'top_complaint_theme',
+        'top_complaint_share',
+      ],
+      conflictColumns: ['product_id'],
+      rows: productSummaryUpsertRows,
+      batchSize: SUMMARY_BATCH_SIZE,
+    })
 
-  console.log('Import summary')
-  console.log('--------------')
-  console.log(
-    `products processed: ${productResult.processed} (inserted ${productResult.inserted}, updated ${productResult.modified})`,
-  )
-  console.log(
-    `reviews processed: ${reviewResult.processed} (inserted ${reviewResult.inserted}, updated ${reviewResult.modified})`,
-  )
-  console.log(
-    `review images processed: ${imageResult.processed} (inserted ${imageResult.inserted}, updated ${imageResult.modified})`,
-  )
-  console.log(
-    `product summaries processed: ${productSummaryResult.processed} (inserted ${productSummaryResult.inserted}, updated ${productSummaryResult.modified})`,
-  )
-  console.log(
-    `category summaries processed: ${categorySummaryResult.processed} (inserted ${categorySummaryResult.inserted}, updated ${categorySummaryResult.modified})`,
-  )
+    const categorySummaryUpsertRows = categorySummaryRows
+      .map(buildCategorySummaryRow)
+      .filter((row) => row.product_id && row.complaint_theme)
+    const categorySummaryResult = await batchUpsert(client, {
+      schemaTable: 'analytics.category_summaries',
+      columns: [
+        'product_id',
+        'product_name',
+        'category',
+        'complaint_theme',
+        'total_reviews',
+        'one_star',
+        'two_star',
+        'three_star',
+        'share_percentage',
+      ],
+      conflictColumns: ['product_id', 'complaint_theme'],
+      rows: categorySummaryUpsertRows,
+      batchSize: SUMMARY_BATCH_SIZE,
+    })
 
-  process.exit(0)
+    await client.query('COMMIT')
+
+    const durationSeconds = ((Date.now() - startedAt) / 1000).toFixed(2)
+
+    console.log('Import summary')
+    console.log('--------------')
+    console.log(`products processed: ${productResult.processed}`)
+    console.log(`products inserted: ${productResult.inserted}`)
+    console.log(`products updated: ${productResult.updated}`)
+    console.log()
+    console.log(`reviews processed: ${reviewResult.processed}`)
+    console.log(`reviews inserted: ${reviewResult.inserted}`)
+    console.log(`reviews updated: ${reviewResult.updated}`)
+    console.log()
+    console.log(`review images processed: ${imageResult.processed}`)
+    console.log(`review images inserted: ${imageResult.inserted}`)
+    console.log(`review images updated: ${imageResult.updated}`)
+    console.log()
+    console.log(`product summaries processed: ${productSummaryResult.processed}`)
+    console.log(`category summaries processed: ${categorySummaryResult.processed}`)
+    console.log()
+    console.log(`duration: ${durationSeconds}s`)
+  } catch (error) {
+    await client.query('ROLLBACK')
+    throw error
+  } finally {
+    client.release()
+  }
 }
 
-main().catch((error) => {
-  console.error('Import failed:', error)
-  process.exit(1)
-})
+if (require.main === module) {
+  main()
+    .then(() => closePool())
+    .then(() => process.exit(0))
+    .catch((error) => {
+      console.error('Import failed:', error.message)
+      closePool().finally(() => process.exit(1))
+    })
+}
+
+module.exports = { main, batchUpsert }

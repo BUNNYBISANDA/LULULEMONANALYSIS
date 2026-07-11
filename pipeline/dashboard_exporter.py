@@ -1,20 +1,19 @@
 from __future__ import annotations
 
+import json
+import shutil
+from pathlib import Path
+
+from pipeline.config import get_config
 from pipeline.pipeline_common import (
-    CATEGORY_SUMMARY_CSV,
-    DASHBOARD_DATA_DIR,
-    LOW_STAR_REVIEWS_CSV,
-    PRODUCT_SUMMARY_CSV,
-    PRODUCTS_CSV,
-    PUBLIC_DASHBOARD_DATA_DIR,
-    REVIEW_IMAGES_MAPPING_CSV,
     ensure_pipeline_dirs,
     read_csv_rows,
     read_products,
     safe_float,
     safe_int,
-    write_json,
 )
+from pipeline.storage.atomic_exporter import atomic_write_json
+from pipeline.storage.review_repository import ReviewRepository
 
 
 def coerce_review_rows(rows: list[dict[str, str]]) -> list[dict[str, object]]:
@@ -90,20 +89,82 @@ def coerce_product_summary_rows(rows: list[dict[str, str]]) -> list[dict[str, ob
     return output
 
 
-def main() -> int:
-    ensure_pipeline_dirs()
-    products = read_products(PRODUCTS_CSV)
-    reviews = coerce_review_rows(read_csv_rows(LOW_STAR_REVIEWS_CSV))
-    images = coerce_image_rows(read_csv_rows(REVIEW_IMAGES_MAPPING_CSV))
-    categories = coerce_category_rows(read_csv_rows(CATEGORY_SUMMARY_CSV))
-    product_summary = coerce_product_summary_rows(read_csv_rows(PRODUCT_SUMMARY_CSV))
+def validate_bundle(bundle: dict[str, object]) -> None:
+    required = {"products", "reviews", "images", "category", "productSummary"}
+    missing = required.difference(bundle)
+    if missing:
+        raise ValueError(f"Dashboard export bundle missing keys: {sorted(missing)}")
+    for key in required:
+        if not isinstance(bundle[key], list):
+            raise ValueError(f"Dashboard export bundle key {key} must be a list")
 
-    for target_dir in (DASHBOARD_DATA_DIR, PUBLIC_DASHBOARD_DATA_DIR):
-        write_json(target_dir / "products.json", products)
-        write_json(target_dir / "reviews.json", reviews)
-        write_json(target_dir / "images.json", images)
-        write_json(target_dir / "category.json", categories)
-        write_json(target_dir / "productSummary.json", product_summary)
+
+def build_bundle() -> dict[str, object]:
+    config = get_config()
+    products = read_products(config.data_dir / "input" / "products.csv")
+    reviews = coerce_review_rows(read_csv_rows(config.processed_dir / "low_star_reviews.csv"))
+    images = coerce_image_rows(read_csv_rows(config.processed_dir / "review_images_mapping.csv"))
+    categories = coerce_category_rows(read_csv_rows(config.processed_dir / "category_summary.csv"))
+    product_summary = coerce_product_summary_rows(read_csv_rows(config.processed_dir / "product_summary.csv"))
+    bundle = {
+        "products": products,
+        "reviews": reviews,
+        "images": images,
+        "category": categories,
+        "productSummary": product_summary,
+    }
+    validate_bundle(bundle)
+    return bundle
+
+
+def write_bundle_to_directory(bundle: dict[str, object], target_dir: Path) -> None:
+    target_dir.mkdir(parents=True, exist_ok=True)
+    file_map = {
+        "products": "products.json",
+        "reviews": "reviews.json",
+        "images": "images.json",
+        "category": "category.json",
+        "productSummary": "productSummary.json",
+    }
+    for key, file_name in file_map.items():
+        payload = bundle[key]
+        json.loads(json.dumps(payload, ensure_ascii=False, allow_nan=False))
+        atomic_write_json(target_dir / file_name, payload)
+
+
+def run() -> dict[str, str]:
+    ensure_pipeline_dirs()
+    config = get_config()
+    bundle = build_bundle()
+    validate_bundle(bundle)
+    temp_dir = config.processed_dir / "dashboard_data_tmp"
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    write_bundle_to_directory(bundle, temp_dir)
+
+    expected_files = {
+        "products.json",
+        "reviews.json",
+        "images.json",
+        "category.json",
+        "productSummary.json",
+    }
+    if expected_files.difference({path.name for path in temp_dir.iterdir()}):
+        raise ValueError("Temporary dashboard export directory is incomplete.")
+
+    write_bundle_to_directory(bundle, config.processed_dir / "dashboard_data")
+    write_bundle_to_directory(bundle, config.public_data_dir / "dashboard_data")
+
+    health = ReviewRepository(config.state_db_path).get_health_snapshot()
+    atomic_write_json(config.processed_dir / "pipeline_health.json", health)
+    try:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+    except OSError:
+        pass
+    return {"dashboard_export": "SUCCESS"}
+
+
+def main() -> int:
+    run()
     return 0
 
 

@@ -7,7 +7,7 @@ import Skeleton from '../components/primitives/Skeleton'
 import FilterBar from '../components/filters/FilterBar'
 import DateRangePicker from '../components/filters/DateRangePicker'
 import TimePeriodFilter from '../components/filters/TimePeriodFilter'
-import ImageCard from '../components/gallery/ImageCard'
+import ImageGroupCard from '../components/gallery/ImageGroupCard'
 import Lightbox from '../components/gallery/Lightbox'
 import { ALL_FILTER_VALUE, LOGO_PATH } from '../data/constants'
 import { filterGalleryItems } from '../data/selectors'
@@ -38,6 +38,20 @@ export default function Gallery() {
 
     return filterGalleryItems(data.imageItems, filters)
   }, [data, filters])
+
+  const groupedItems = useMemo(() => {
+    const groups = new Map()
+
+    filteredItems.forEach((item, index) => {
+      const groupKey = item.reviewId || item.key
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, { reviewId: groupKey, firstIndex: index, items: [] })
+      }
+      groups.get(groupKey).items.push(item)
+    })
+
+    return [...groups.values()]
+  }, [filteredItems])
   const exportConfig = useMemo(
     () =>
       data
@@ -206,7 +220,9 @@ export default function Gallery() {
           </label>
         </div>
         <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <p className="text-sm text-[#4a4a4a]">Showing {filteredItems.length} images</p>
+          <p className="text-sm text-[#4a4a4a]">
+            Showing {filteredItems.length} images across {groupedItems.length} reviews
+          </p>
           <button
             type="button"
             onClick={resetFilters}
@@ -232,19 +248,13 @@ export default function Gallery() {
         />
       ) : (
         <div className="grid gap-3 min-[430px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
-          {filteredItems.map((item, index) => {
-            const extraCount =
-              filteredItems.filter((candidate) => candidate.reviewId === item.reviewId).length - 1
-
-            return (
-              <ImageCard
-                key={item.key}
-                item={item}
-                extraCount={Math.max(extraCount, 0)}
-                onClick={() => setActiveIndex(index)}
-              />
-            )
-          })}
+          {groupedItems.map((group) => (
+            <ImageGroupCard
+              key={group.reviewId}
+              group={group}
+              onClick={() => setActiveIndex(group.firstIndex)}
+            />
+          ))}
         </div>
       )}
 

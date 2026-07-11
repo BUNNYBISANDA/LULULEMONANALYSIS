@@ -1,0 +1,14 @@
+node_modules
+backend/node_modules
+dist
+dist-ssr
+.git
+.env
+.env.*
+!.env.example
+backend/.env
+data/state/
+data/raw/
+.pytest_cache
+**/__pycache__
+*.pyc

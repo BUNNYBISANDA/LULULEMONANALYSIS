@@ -1,6 +1,7 @@
 import {
   ALL_FILTER_VALUE,
   DEFAULT_TIME_PERIOD,
+  HIDDEN_PRODUCT_IDS,
   LOW_STAR_RATINGS,
   TIME_PERIOD_OPTIONS,
   businessGroupBlueprints,
@@ -18,6 +19,10 @@ import {
 const OFFICIAL_DEFECT_GROUP_KEYS = new Set(
   officialDefectGroups.filter((group) => group.isCertified).map((group) => group.key),
 )
+
+function isHiddenProductId(productId) {
+  return HIDDEN_PRODUCT_IDS.includes(String(productId || '').trim())
+}
 
 export function resolveReviewDefectGroup(review) {
   const group = String(review?.matchedDefectGroup || '').trim()
@@ -1373,11 +1378,22 @@ export function buildDashboardData(
   selectedProductId = 'all',
   selectedTimePeriod = DEFAULT_TIME_PERIOD,
 ) {
-  const normalizedProducts = normalizeProducts(products)
-  const normalizedReviews = normalizeReviews(reviews)
-  const normalizedImages = normalizeImages(images)
-  const normalizedCategory = normalizeCategorySummary(category)
-  const normalizedProductSummary = normalizeProductSummaries(productSummary)
+  const normalizedProducts = normalizeProducts(products).filter(
+    (product) => !isHiddenProductId(product.productId),
+  )
+  const normalizedReviews = normalizeReviews(reviews).filter(
+    (review) => !isHiddenProductId(review.productId),
+  )
+  const normalizedImages = normalizeImages(images).filter(
+    (image) => !isHiddenProductId(image.productId),
+  )
+  const normalizedCategory = normalizeCategorySummary(category).filter(
+    (row) => !isHiddenProductId(row.productId),
+  )
+  const normalizedProductSummary = normalizeProductSummaries(productSummary).filter(
+    (row) => !isHiddenProductId(row.productId),
+  )
+  const effectiveSelectedProductId = isHiddenProductId(selectedProductId) ? 'all' : selectedProductId
   const anchorDate = findLatestReviewDate(normalizedReviews, normalizedImages)
   const periodOption = getPeriodOption(selectedTimePeriod)
   const periodStartDate = anchorDate ? shiftDateByMonths(anchorDate, -periodOption.months) : null
@@ -1389,20 +1405,20 @@ export function buildDashboardData(
   const periodImages = filterByTimePeriod(normalizedImages, selectedTimePeriod, anchorDate)
 
   const filteredReviews = attachImageEvidence(
-    filterByProductId(periodReviews, selectedProductId),
-    filterByProductId(periodImages, selectedProductId),
+    filterByProductId(periodReviews, effectiveSelectedProductId),
+    filterByProductId(periodImages, effectiveSelectedProductId),
   )
-  const filteredImages = filterByProductId(periodImages, selectedProductId)
-  const filteredCategory = filterByProductId(normalizedCategory, selectedProductId)
-  const filteredProductSummary = filterByProductId(normalizedProductSummary, selectedProductId)
+  const filteredImages = filterByProductId(periodImages, effectiveSelectedProductId)
+  const filteredCategory = filterByProductId(normalizedCategory, effectiveSelectedProductId)
+  const filteredProductSummary = filterByProductId(normalizedProductSummary, effectiveSelectedProductId)
 
   const selectedProduct =
-    selectedProductId === 'all'
+    effectiveSelectedProductId === 'all'
       ? null
-      : normalizedProducts.find((product) => product.productId === selectedProductId) || null
+      : normalizedProducts.find((product) => product.productId === effectiveSelectedProductId) || null
   const selectedProductName = selectedProduct?.productName || 'All Products'
   const dashboardTitle =
-    selectedProductId === 'all'
+    effectiveSelectedProductId === 'all'
       ? 'Voice of Guest Intelligence'
       : `${selectedProductName} Voice of Guest Intelligence`
 
@@ -1471,7 +1487,7 @@ export function buildDashboardData(
 
   return {
     products: normalizedProducts,
-    selectedProductId,
+    selectedProductId: effectiveSelectedProductId,
     selectedTimePeriod: periodOption.value,
     periodMonths: periodOption.months,
     anchorDate,
@@ -1482,7 +1498,7 @@ export function buildDashboardData(
     selectedProduct,
     selectedProductName,
     dashboardTitle,
-    isAllProducts: selectedProductId === 'all',
+    isAllProducts: effectiveSelectedProductId === 'all',
     themeRows,
     groupRows,
     imageItems: filteredImages,

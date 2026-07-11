@@ -1,56 +1,41 @@
 const express = require('express')
-const Review = require('../models/Review')
+const reviewsRepository = require('../repositories/reviewsRepository')
 
 const router = express.Router()
 
+function parsePage(value) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed >= 1 ? Math.floor(parsed) : 1
+}
+
+function parseLimit(value) {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return 25
+  }
+  return Math.min(Math.floor(parsed), 200)
+}
+
 router.get('/', async (req, res, next) => {
   try {
-    const {
+    const { productId, rating, complaintTheme, search } = req.query
+    const page = parsePage(req.query.page)
+    const limit = parseLimit(req.query.limit)
+
+    const { items, total } = await reviewsRepository.findPaginated({
       productId,
       rating,
       complaintTheme,
       search,
-      page = 1,
-      limit = 25,
-    } = req.query
-
-    const filters = {}
-
-    if (productId) {
-      filters.productId = productId
-    }
-    if (rating) {
-      filters.rating = Number(rating)
-    }
-    if (complaintTheme) {
-      filters.complaintTheme = complaintTheme
-    }
-    if (search) {
-      filters.$or = [
-        { reviewTitle: { $regex: search, $options: 'i' } },
-        { reviewText: { $regex: search, $options: 'i' } },
-        { reviewId: { $regex: search, $options: 'i' } },
-      ]
-    }
-
-    const pageNumber = Math.max(Number(page) || 1, 1)
-    const pageSize = Math.max(Math.min(Number(limit) || 25, 200), 1)
-    const skip = (pageNumber - 1) * pageSize
-
-    const [items, total] = await Promise.all([
-      Review.find(filters)
-        .sort({ reviewDate: -1, helpfulVotes: -1 })
-        .skip(skip)
-        .limit(pageSize)
-        .lean(),
-      Review.countDocuments(filters),
-    ])
+      page,
+      limit,
+    })
 
     res.json({
-      page: pageNumber,
-      limit: pageSize,
+      page,
+      limit,
       total,
-      totalPages: Math.ceil(total / pageSize),
+      totalPages: Math.ceil(total / limit) || 0,
       items,
     })
   } catch (error) {

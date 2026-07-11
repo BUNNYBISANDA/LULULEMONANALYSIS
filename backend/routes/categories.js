@@ -1,19 +1,13 @@
 const express = require('express')
-const CategorySummary = require('../models/CategorySummary')
+const summariesRepository = require('../repositories/summariesRepository')
 
 const router = express.Router()
 
 router.get('/', async (req, res, next) => {
   try {
-    const filters = {}
-    if (req.query.productId) {
-      filters.productId = req.query.productId
-    }
-
-    const rows = await CategorySummary.find(filters)
-      .sort({ productId: 1, totalReviews: -1, complaintTheme: 1 })
-      .lean()
-
+    const rows = await summariesRepository.getCategorySummaries({
+      productId: req.query.productId,
+    })
     res.json(rows)
   } catch (error) {
     next(error)

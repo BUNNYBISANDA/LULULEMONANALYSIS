@@ -2,13 +2,10 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 
+from pipeline.config import get_config
 from pipeline.pipeline_common import (
-    CATEGORY_SUMMARY_CSV,
     CATEGORY_SUMMARY_FIELDNAMES,
-    LOW_STAR_REVIEWS_CSV,
-    PRODUCT_SUMMARY_CSV,
     PRODUCT_SUMMARY_FIELDNAMES,
-    REVIEW_IMAGES_MAPPING_CSV,
     clean_text,
     ensure_pipeline_dirs,
     read_csv_rows,
@@ -152,17 +149,17 @@ def build_category_summary(low_star_rows: list[dict[str, str]]) -> list[dict[str
 
 def main() -> int:
     ensure_pipeline_dirs()
-    from pipeline.pipeline_common import ALL_REVIEWS_CSV
+    config = get_config()
 
-    all_rows = read_csv_rows(ALL_REVIEWS_CSV)
-    low_star_rows = read_csv_rows(LOW_STAR_REVIEWS_CSV)
-    image_rows = read_csv_rows(REVIEW_IMAGES_MAPPING_CSV)
+    all_rows = read_csv_rows(config.processed_dir / "all_reviews.csv")
+    low_star_rows = read_csv_rows(config.processed_dir / "low_star_reviews.csv")
+    image_rows = read_csv_rows(config.processed_dir / "review_images_mapping.csv")
 
     product_summary = build_product_summary(low_star_rows, all_rows, image_rows)
     category_summary = build_category_summary(low_star_rows)
 
-    write_csv_rows(PRODUCT_SUMMARY_CSV, product_summary, PRODUCT_SUMMARY_FIELDNAMES)
-    write_csv_rows(CATEGORY_SUMMARY_CSV, category_summary, CATEGORY_SUMMARY_FIELDNAMES)
+    write_csv_rows(config.processed_dir / "product_summary.csv", product_summary, PRODUCT_SUMMARY_FIELDNAMES)
+    write_csv_rows(config.processed_dir / "category_summary.csv", category_summary, CATEGORY_SUMMARY_FIELDNAMES)
     return 0
 
 

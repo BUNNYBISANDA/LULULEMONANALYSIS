@@ -1,4 +1,4 @@
-import { DASHBOARD_DATA_PATH } from './constants'
+import { DASHBOARD_DATA_PATH, HIDDEN_PRODUCT_IDS } from './constants'
 
 const cache = new Map()
 
@@ -27,7 +27,11 @@ function cached(key, loader) {
 }
 
 export function loadProducts() {
-  return cached('dashboardProducts', () => fetchJson(`${DASHBOARD_DATA_PATH}products.json`))
+  return cached('dashboardProducts', () =>
+    fetchJson(`${DASHBOARD_DATA_PATH}products.json`).then((products) =>
+      products.filter((product) => !HIDDEN_PRODUCT_IDS.includes(product.product_id || product.productId)),
+    ),
+  )
 }
 
 export function loadDashboardBundle() {

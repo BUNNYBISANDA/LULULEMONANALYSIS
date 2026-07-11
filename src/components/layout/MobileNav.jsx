@@ -14,7 +14,7 @@ export default function MobileNav({ open, onClose }) {
     selectedProductId,
     setSelectedProductId,
   } = useProductFilter()
-  const isVisionPage = location.pathname === '/'
+  const isHomePage = location.pathname === '/'
 
   useEffect(() => {
     if (!open) {
@@ -44,7 +44,7 @@ export default function MobileNav({ open, onClose }) {
       <aside className="absolute right-0 top-0 flex h-full w-[92vw] max-w-sm flex-col overflow-y-auto border-l border-[#e5e5e5] bg-white px-4 py-5 shadow-2xl sm:px-5">
         <div className="flex items-center justify-between">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#767676]">
               Navigation
             </p>
             <Link to="/" onClick={onClose} className="mt-2 flex items-center gap-3">
@@ -55,25 +55,25 @@ export default function MobileNav({ open, onClose }) {
                   className="h-8 w-8 rounded-full object-contain"
                 />
               </span>
-              <span className="truncate text-[13px] font-bold uppercase tracking-[0.14em] text-[#000000] sm:tracking-[0.18em]">
+              <span className="truncate text-[13px] font-bold uppercase tracking-[0.16em] text-[#000000]">
                 LULULEMON
               </span>
             </Link>
-            <p className="mt-2 max-w-[15rem] text-[11px] font-medium uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
+            <p className="mt-2 max-w-[15rem] text-[11px] font-semibold uppercase tracking-[0.16em] text-[#767676]">
               {dashboardTitle}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-[#e5e5e5] bg-white p-2 text-black"
+            className="rounded-full border border-[#e5e5e5] bg-white p-2 text-black shadow-sm"
             aria-label="Close navigation"
           >
             <X size={18} />
           </button>
         </div>
 
-        {!isVisionPage ? (
+        {!isHomePage ? (
           <ProductStyleSelect
             value={selectedProductId}
             options={productOptions}
@@ -92,7 +92,7 @@ export default function MobileNav({ open, onClose }) {
                 end={route.end}
                 onClick={onClose}
                 className={({ isActive }) =>
-                  `rounded-2xl border px-4 py-3 text-left text-sm font-medium transition ${
+                  `rounded-[8px] border px-4 py-3 text-left text-sm font-semibold transition ${
                     isActive
                       ? 'border-black bg-black text-white'
                       : 'border-[#e5e5e5] bg-white text-black hover:border-black'

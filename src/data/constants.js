@@ -22,6 +22,7 @@ export const DASHBOARD_DATA_PATH = `${DATA_PATH}dashboard_data/`
 export const LOGO_PATH = `${BASE_PATH}lululemon-logo.png`
 export const ALL_FILTER_VALUE = 'All'
 export const LOW_STAR_RATINGS = [1, 2, 3]
+export const HIDDEN_PRODUCT_IDS = ['pace_breaker_short_7_linerless']
 export const DEFAULT_TIME_PERIOD = '6M'
 export const TIME_PERIOD_OPTIONS = [
   { value: '12M', label: '12M', months: 12 },
@@ -55,11 +56,11 @@ export const trendPalette = {
 }
 
 export const navRoutes = [
-  { label: 'Vision', to: '/', end: true },
+  { label: 'Home', to: '/', end: true },
+  { label: 'Insights', to: '/insights' },
   { label: 'Analytics', to: '/analytics' },
   { label: 'Reviews', to: '/reviews' },
   { label: 'Gallery', to: '/gallery' },
-  { label: 'Guest-to-Factory Intelligence', to: '/vp-vision' },
 ]
 
 export const themeKeywordMap = {
@@ -516,9 +517,10 @@ export const insightRecommendations = [
 ]
 
 export const pageMetadata = {
-  vision: { title: 'Vision', path: '/', icon: Eye },
+  vision: { title: 'Home', path: '/', icon: Eye },
+  insights: { title: 'Insights', path: '/insights', icon: Workflow },
   analytics: { title: 'Analytics', path: '/analytics', icon: BarChart3 },
   reviews: { title: 'Reviews Explorer', path: '/reviews', icon: MessageSquareQuote },
   gallery: { title: 'Image Gallery', path: '/gallery', icon: ImageIcon },
-  vpVision: { title: 'Guest-to-Factory Intelligence', path: '/vp-vision', icon: Workflow },
+  vpVision: { title: 'Guest-to-Factory Intelligence', path: '/insights', icon: Workflow },
 }

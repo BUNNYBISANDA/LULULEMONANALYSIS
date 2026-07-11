@@ -8,7 +8,7 @@ export default function SectionHeader({
 }) {
   return (
     <div className={`min-w-0 ${align === 'center' ? 'mx-auto max-w-3xl text-center' : ''} ${className}`}>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#767676]">
         {eyebrow}
       </p>
       <div
@@ -17,7 +17,7 @@ export default function SectionHeader({
         }`}
       >
         {titlePrefix}
-        <h2 className="font-display min-w-0 break-words text-xl font-semibold leading-tight tracking-normal text-[#000000] sm:text-2xl md:text-3xl">
+        <h2 className="font-display min-w-0 break-words text-2xl font-semibold leading-tight tracking-normal text-[#000000] sm:text-3xl md:text-4xl">
           {title}
         </h2>
       </div>

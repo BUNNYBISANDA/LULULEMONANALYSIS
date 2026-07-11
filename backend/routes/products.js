@@ -1,11 +1,11 @@
 const express = require('express')
-const Product = require('../models/Product')
+const productsRepository = require('../repositories/productsRepository')
 
 const router = express.Router()
 
 router.get('/', async (_req, res, next) => {
   try {
-    const products = await Product.find().sort({ category: 1, productName: 1 }).lean()
+    const products = await productsRepository.findAll()
     res.json(products)
   } catch (error) {
     next(error)

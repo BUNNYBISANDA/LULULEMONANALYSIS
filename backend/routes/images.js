@@ -1,41 +1,40 @@
 const express = require('express')
-const ReviewImage = require('../models/ReviewImage')
+const imagesRepository = require('../repositories/imagesRepository')
 
 const router = express.Router()
 
+function parsePage(value) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed >= 1 ? Math.floor(parsed) : 1
+}
+
+function parseLimit(value) {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return 25
+  }
+  return Math.min(Math.floor(parsed), 200)
+}
+
 router.get('/', async (req, res, next) => {
   try {
-    const { productId, rating, complaintTheme, page = 1, limit = 25 } = req.query
-    const filters = {}
+    const { productId, rating, complaintTheme } = req.query
+    const page = parsePage(req.query.page)
+    const limit = parseLimit(req.query.limit)
 
-    if (productId) {
-      filters.productId = productId
-    }
-    if (rating) {
-      filters.rating = Number(rating)
-    }
-    if (complaintTheme) {
-      filters.complaintTheme = complaintTheme
-    }
-
-    const pageNumber = Math.max(Number(page) || 1, 1)
-    const pageSize = Math.max(Math.min(Number(limit) || 25, 200), 1)
-    const skip = (pageNumber - 1) * pageSize
-
-    const [items, total] = await Promise.all([
-      ReviewImage.find(filters)
-        .sort({ reviewDate: -1, rating: 1 })
-        .skip(skip)
-        .limit(pageSize)
-        .lean(),
-      ReviewImage.countDocuments(filters),
-    ])
+    const { items, total } = await imagesRepository.findPaginated({
+      productId,
+      rating,
+      complaintTheme,
+      page,
+      limit,
+    })
 
     res.json({
-      page: pageNumber,
-      limit: pageSize,
+      page,
+      limit,
       total,
-      totalPages: Math.ceil(total / pageSize),
+      totalPages: Math.ceil(total / limit) || 0,
       items,
     })
   } catch (error) {

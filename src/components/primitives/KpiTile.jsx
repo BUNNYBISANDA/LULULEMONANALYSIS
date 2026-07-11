@@ -11,13 +11,13 @@ export default function KpiTile({
 }) {
   return (
     <Panel
-      className={`group p-4 transition duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] sm:p-5 ${className}`}
+      className={`group p-5 transition duration-300 hover:-translate-y-0.5 hover:border-black hover:shadow-[0_16px_36px_rgba(0,0,0,0.07)] sm:p-6 ${className}`}
     >
       <div className="flex items-start justify-between gap-4">
         {Icon ? <Icon size={18} className="mt-0.5 shrink-0 text-[#767676]" /> : <div />}
         {delta ? (
           <span
-            className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] sm:tracking-[0.18em] ${
+            className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${
               delta.tone === 'positive'
                 ? 'bg-[#edf6f0] text-[#1f6f3e]'
                 : delta.tone === 'negative'
@@ -29,14 +29,14 @@ export default function KpiTile({
           </span>
         ) : null}
       </div>
-      <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:mt-5 sm:tracking-[0.18em]">
+      <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#767676]">
         {label}
       </p>
-      <p className="font-display mt-3 min-w-0 break-words text-[1.45rem] font-semibold leading-tight tracking-normal text-[#000000] sm:text-[1.7rem] lg:text-[1.9rem]">
+      <p className="font-display mt-3 min-w-0 break-words text-[1.8rem] font-semibold leading-none tracking-normal text-[#000000] sm:text-[2.15rem] lg:text-[2.45rem]">
         {value}
       </p>
       {sparkline ? <div className="mt-4">{sparkline}</div> : null}
-      {note ? <p className="mt-3 text-sm leading-6 text-[#4a4a4a]">{note}</p> : null}
+      {note ? <p className="mt-4 text-sm leading-6 text-[#4a4a4a]">{note}</p> : null}
     </Panel>
   )
 }

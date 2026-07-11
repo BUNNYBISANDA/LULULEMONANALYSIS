@@ -133,6 +133,51 @@ node scripts/importPipelineData.js
 npm run dev
 ```
 
+## Deployment
+
+The dashboard (`src/` + `public/data/`) is a fully static build — it reads pre-generated JSON from
+`public/data/dashboard_data/` at runtime and does not call the backend API. The `backend/` (Express +
+MongoDB) service is a separate, optional API layer for consumers other than this dashboard.
+
+### Docker
+
+Three services are defined in `docker-compose.yml`: `frontend` (nginx serving the Vite build),
+`backend` (Express API), and `mongo`.
+
+```powershell
+docker compose up --build
+```
+
+- Frontend: http://localhost:8080
+- Backend health check: http://localhost:5000/api/health
+- MongoDB: localhost:27017
+
+Rebuild the frontend image whenever `public/data/dashboard_data/` changes (i.e., after a pipeline run),
+since the JSON is baked into the static bundle at build time:
+
+```powershell
+docker compose build frontend
+docker compose up -d frontend
+```
+
+Backend environment variables (`MONGO_URI`, `PORT`) are set in `docker-compose.yml` for the containerized
+setup. For a non-Docker backend run, copy `.env.example` to `backend/.env` and fill in `MONGO_URI`.
+
+### Building images individually
+
+```powershell
+docker build -f Dockerfile.frontend -t lululemon-dashboard-frontend .
+docker build -f Dockerfile.backend -t lululemon-dashboard-backend .
+```
+
+### Refreshing data in production
+
+1. Run the pipeline (`python run_full_pipeline.py --mode incremental`) wherever it has network access to
+   the review source.
+2. Commit/copy the updated `public/data/dashboard_data/*.json`.
+3. Rebuild and redeploy the `frontend` image (or `npm run build` + redeploy `dist/` to any static host —
+   Netlify, S3 + CloudFront, GitHub Pages, etc. all work since there's no server-side rendering).
+
 ## Notes
 
 - The Python pipeline implementation was moved into `pipeline/` to keep the repo root clean.
