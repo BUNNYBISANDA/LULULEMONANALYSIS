@@ -642,7 +642,7 @@ export default function VPAnalytics({ showExpertAnalysis = false }) {
             </span>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
-                Guest-to-Factory Intelligence
+                Executive Insights
               </p>
               <h1 className="font-display mt-2 break-words text-2xl font-semibold tracking-normal text-black sm:text-3xl">
                 Production Quality Intelligence

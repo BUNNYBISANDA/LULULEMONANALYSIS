@@ -522,5 +522,4 @@ export const pageMetadata = {
   analytics: { title: 'Analytics', path: '/analytics', icon: BarChart3 },
   reviews: { title: 'Reviews Explorer', path: '/reviews', icon: MessageSquareQuote },
   gallery: { title: 'Image Gallery', path: '/gallery', icon: ImageIcon },
-  vpVision: { title: 'Guest-to-Factory Intelligence', path: '/insights', icon: Workflow },
 }
