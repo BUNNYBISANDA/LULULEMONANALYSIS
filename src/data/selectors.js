@@ -213,7 +213,7 @@ export function formatMonthLabel(value) {
 
   return parsedDate.toLocaleDateString('en-US', {
     month: 'short',
-    year: '2-digit',
+    year: 'numeric',
   })
 }
 

@@ -11,6 +11,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from 'lucide-react'
+import ExecutiveSummaryPanel from '../components/home/ExecutiveSummaryPanel'
 import KpiTile from '../components/primitives/KpiTile'
 import Panel from '../components/primitives/Panel'
 import SectionHeader from '../components/primitives/SectionHeader'
@@ -255,6 +256,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <ExecutiveSummaryPanel data={data} volumeTrend={volumeTrend} />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {heroKpis.map((tile) => (
