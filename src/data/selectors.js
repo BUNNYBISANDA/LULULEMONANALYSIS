@@ -59,7 +59,7 @@ function getPeriodOption(value) {
   )
 }
 
-function shiftDateByMonths(date, monthDelta) {
+export function shiftDateByMonths(date, monthDelta) {
   const shifted = new Date(date)
   const originalDay = shifted.getDate()
 
@@ -74,6 +74,11 @@ function shiftDateByMonths(date, monthDelta) {
   shifted.setDate(Math.min(originalDay, daysInTargetMonth))
 
   return shifted
+}
+
+export function isWithinDateWindow(dateValue, start, end) {
+  const time = new Date(dateValue).getTime()
+  return !Number.isNaN(time) && time >= start.getTime() && time <= end.getTime()
 }
 
 function findLatestReviewDate(...collections) {

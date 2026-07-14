@@ -1,8 +1,8 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowRight,
   BarChart3,
-  Camera,
   Factory,
   Gauge,
   Image as ImageIcon,
@@ -12,26 +12,12 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import ExecutiveSummaryPanel from '../components/home/ExecutiveSummaryPanel'
-import KpiTile from '../components/primitives/KpiTile'
 import Panel from '../components/primitives/Panel'
 import SectionHeader from '../components/primitives/SectionHeader'
 import Skeleton from '../components/primitives/Skeleton'
 import { LOGO_PATH } from '../data/constants'
-import {
-  buildVolumeTrend,
-  calculateFactoryActionabilityScore,
-  formatShortDate,
-  truncateText,
-} from '../data/selectors'
+import { buildVolumeTrend, formatShortDate, truncateText } from '../data/selectors'
 import { useDashboardDataset } from '../hooks/useDataset'
-
-function formatNumber(value) {
-  return new Intl.NumberFormat('en-US').format(value || 0)
-}
-
-function formatPercent(value) {
-  return `${Math.round(value || 0)}%`
-}
 
 function resolveTrendCopy(volumeTrend) {
   if (volumeTrend.direction === 'increased') {
@@ -102,6 +88,7 @@ const destinationCards = [
 
 export default function HomePage() {
   const { data, loading, error } = useDashboardDataset(true)
+  const [summaryPeriod, setSummaryPeriod] = useState('1M')
 
   if (loading) {
     return <HomeSkeleton />
@@ -122,41 +109,11 @@ export default function HomePage() {
   const volumeTrend = buildVolumeTrend(data.monthlyTrend)
   const trend = resolveTrendCopy(volumeTrend)
   const TrendIcon = trend.icon
-  const actionability = calculateFactoryActionabilityScore(data.masterReviews)
   const topRisk = data.topComplaintTheme
   const topProduct = data.comparisonRows?.[0]
   const latestReview = [...data.masterReviews]
     .sort((left, right) => new Date(right.reviewDate || 0) - new Date(left.reviewDate || 0))
     .at(0)
-
-  const heroKpis = [
-    {
-      label: 'Low-star reviews',
-      value: formatNumber(data.lowStarReviewCount),
-      note: `${data.selectedTimePeriod} view across ${data.selectedProductName}.`,
-      icon: MessageSquareQuote,
-    },
-    {
-      label: 'Avg low-star rating',
-      value: data.averageRating ? data.averageRating.toFixed(2) : 'N/A',
-      note: 'Weighted from selected low-star review evidence.',
-      icon: Gauge,
-    },
-    {
-      label: 'Factory actionable',
-      value: formatPercent(actionability.actionableShare),
-      note: actionability.highestRiskCategory
-        ? `${actionability.highestRiskCategory} is the leading defect group.`
-        : 'No certified defect group dominates this view.',
-      icon: Factory,
-    },
-    {
-      label: 'Image evidence',
-      value: formatNumber(data.imageItems.length),
-      note: `${formatPercent(actionability.withImagesShare)} of low-star reviews have visual proof.`,
-      icon: Camera,
-    },
-  ]
 
   return (
     <div className="space-y-7">
@@ -257,13 +214,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      <ExecutiveSummaryPanel data={data} volumeTrend={volumeTrend} />
-
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {heroKpis.map((tile) => (
-          <KpiTile key={tile.label} {...tile} />
-        ))}
-      </section>
+      <ExecutiveSummaryPanel
+        data={data}
+        periodValue={summaryPeriod}
+        onPeriodChange={setSummaryPeriod}
+      />
 
       <section className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr]">
         <Panel className="p-5 sm:p-6">
