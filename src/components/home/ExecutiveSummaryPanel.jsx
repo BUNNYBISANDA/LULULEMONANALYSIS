@@ -1,11 +1,14 @@
 import {
+  ArrowDownRight,
+  ArrowUpRight,
   Camera,
   Factory,
   Gauge,
-  ShieldAlert,
+  MessageCircle,
+  Ruler,
   ShieldCheck,
-  TrendingDown,
-  TrendingUp,
+  Star,
+  Target,
 } from 'lucide-react'
 import Panel from '../primitives/Panel'
 import { TIME_PERIOD_OPTIONS } from '../../data/constants'
@@ -15,6 +18,7 @@ import {
   formatShortDate,
   getTopComplaintTheme,
   isWithinDateWindow,
+  resolveDefectCategory,
   shiftDateByMonths,
 } from '../../data/selectors'
 
@@ -45,7 +49,7 @@ export default function ExecutiveSummaryPanel({ data, periodValue, onPeriodChang
   const windowStart = shiftDateByMonths(windowEnd, -selectedOption.months)
   const previousWindowEnd = windowStart
   const previousWindowStart = shiftDateByMonths(windowStart, -selectedOption.months)
-  const periodNoun = selectedOption.months === 1 ? '30-day' : `${selectedOption.months}-month`
+  const periodNoun = selectedOption.months === 1 ? '30-day' : `${selectedOption.months}mo`
 
   const currentWindowReviews = data.masterReviews.filter((review) =>
     isWithinDateWindow(review.reviewDate, windowStart, windowEnd),
@@ -58,6 +62,7 @@ export default function ExecutiveSummaryPanel({ data, periodValue, onPeriodChang
   )
 
   const topTheme = getTopComplaintTheme(currentWindowReviews)
+  const topThemeAction = topTheme ? resolveDefectCategory(topTheme.theme) : null
   const responseMetrics = buildResponseMetrics(currentWindowReviews)
   const averageRating = getAverageRating(currentWindowReviews)
   const actionability = calculateFactoryActionabilityScore(currentWindowReviews)
@@ -67,34 +72,57 @@ export default function ExecutiveSummaryPanel({ data, periodValue, onPeriodChang
     ? (delta / previousWindowReviews.length) * 100
     : 0
   const direction = delta > 0 ? 'increased' : delta < 0 ? 'decreased' : 'stable'
-
-  const trendTone = direction === 'increased' ? 'negative' : direction === 'decreased' ? 'positive' : 'neutral'
-  const TrendIcon = direction === 'increased' ? TrendingUp : direction === 'decreased' ? TrendingDown : Gauge
-  const trendColorClass =
-    trendTone === 'positive' ? 'text-[#4ade80]' : trendTone === 'negative' ? 'text-[#ff6b6b]' : 'text-white/60'
+  const TrendIcon = direction === 'increased' ? ArrowUpRight : direction === 'decreased' ? ArrowDownRight : Gauge
 
   const rangeLabel = `${formatShortDate(windowStart)} - ${formatShortDate(windowEnd)}`
 
   const stats = [
+    { label: 'Low-star Reviews', value: formatNumber(currentWindowReviews.length), icon: Star },
+    { label: 'Avg Rating', value: averageRating ? averageRating.toFixed(2) : 'N/A', icon: Gauge },
+    { label: 'Factory Actionable', value: formatPercent(actionability.actionableShare), icon: Factory },
+    { label: 'Photo Evidence', value: formatNumber(currentWindowImages.length), icon: Camera },
+    { label: 'Brand Response', value: formatPercent(responseMetrics.responseRate), icon: ShieldCheck },
+  ]
+
+  const takeawayText = topTheme
+    ? direction === 'increased'
+      ? `Volume is rising - prioritize ${topTheme.theme} with ${topThemeAction?.owner || 'the owning team'} to reverse the trend.`
+      : `${topTheme.theme} remains the leading risk - ${topThemeAction?.owner || 'the owning team'} can act now while volume is manageable.`
+    : 'No dominant risk theme this period - continue routine monitoring.'
+
+  const highlights = [
     {
-      label: 'Avg rating',
-      value: averageRating ? averageRating.toFixed(2) : 'N/A',
-      icon: Gauge,
+      icon: TrendIcon,
+      text: previousWindowReviews.length
+        ? `Volume ${direction} ${Math.abs(Math.round(deltaPercent))}% vs prior ${periodNoun}`
+        : `No prior ${periodNoun} data to compare`,
     },
     {
-      label: 'Factory actionable',
-      value: formatPercent(actionability.actionableShare),
-      icon: Factory,
+      icon: Ruler,
+      text: topTheme
+        ? `${topTheme.theme} leads at ${topTheme.share.toFixed(0)}% of low-star volume`
+        : 'No single theme dominates this period',
     },
     {
-      label: 'Photo evidence',
-      value: formatNumber(currentWindowImages.length),
       icon: Camera,
+      text: `${formatNumber(currentWindowImages.length)} reviews carry photo proof`,
+    },
+  ]
+
+  const insights = [
+    {
+      icon: Target,
+      text: topThemeAction
+        ? `${topTheme.theme} maps to ${topThemeAction.owner} - ready for action`
+        : 'No defect group traced this period',
     },
     {
-      label: 'Brand response rate',
-      value: formatPercent(responseMetrics.responseRate),
-      icon: ShieldCheck,
+      icon: MessageCircle,
+      text: `Brand responded to ${formatPercent(responseMetrics.responseRate)} of flagged reviews`,
+    },
+    {
+      icon: Factory,
+      text: `${formatPercent(actionability.actionableShare)} of complaints are vendor-ready`,
     },
   ]
 
@@ -109,10 +137,6 @@ export default function ExecutiveSummaryPanel({ data, periodValue, onPeriodChang
             <h2 className="font-display mt-3 text-2xl font-semibold leading-[1.05] tracking-normal text-white sm:text-3xl">
               {rangeLabel}
             </h2>
-            <p className="mt-1 text-sm text-white/50">
-              Trailing {periodNoun === '30-day' ? '30 days' : periodNoun.replace('-', ' ')} of guest sentiment
-              activity, {data.selectedProductName}.
-            </p>
           </div>
 
           <div className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1">
@@ -133,75 +157,68 @@ export default function ExecutiveSummaryPanel({ data, periodValue, onPeriodChang
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-          <div className="rounded-[8px] border border-white/10 bg-white/[0.04] p-5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">
-              Low-star reviews
+        <div className="mt-5 flex items-start gap-3 rounded-[8px] border border-[#E20010]/40 bg-[#E20010]/10 p-4">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E20010]">
+            <Target size={16} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70">
+              Key Takeaway
             </p>
-            <p className="font-display mt-2 text-6xl font-semibold leading-none text-white sm:text-7xl">
-              {formatNumber(currentWindowReviews.length)}
+            <p className="mt-1 text-sm font-medium leading-6 text-white sm:text-base">{takeawayText}</p>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+          {stats.map((stat) => {
+            const Icon = stat.icon
+            return (
+              <div key={stat.label} className="rounded-[8px] border border-white/10 bg-white/[0.04] p-3.5">
+                <div className="flex items-center gap-2 text-white/50">
+                  <Icon size={14} />
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em]">{stat.label}</p>
+                </div>
+                <p className="mt-2 text-2xl font-semibold text-white">{stat.value}</p>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="mt-5 grid gap-4 border-t border-white/10 pt-5 sm:grid-cols-2">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">
+              Key Highlights
             </p>
-            <div className="mt-4 flex items-center gap-2">
-              <TrendIcon size={16} className={trendColorClass} />
-              <p className={`text-sm font-semibold ${trendColorClass}`}>
-                {previousWindowReviews.length
-                  ? `${direction === 'stable' ? 'Steady' : `${Math.abs(Math.round(deltaPercent))}% ${direction}`} vs prior ${periodNoun} period`
-                  : `No prior ${periodNoun} period to compare`}
-              </p>
+            <div className="mt-3 space-y-2.5">
+              {highlights.map((item, index) => {
+                const Icon = item.icon
+                return (
+                  <div key={index} className="flex items-start gap-2.5">
+                    <Icon size={15} className="mt-0.5 shrink-0 text-[#E20010]" />
+                    <p className="text-sm leading-6 text-white/85">{item.text}</p>
+                  </div>
+                )
+              })}
             </div>
-            <p className="mt-1 text-xs text-white/40">
-              {formatNumber(currentWindowReviews.length)} vs {formatNumber(previousWindowReviews.length)} reviews (
-              {formatShortDate(previousWindowStart)} - {formatShortDate(previousWindowEnd)}).
-            </p>
           </div>
 
-          <div className="flex flex-col justify-between gap-4">
-            {topTheme ? (
-              <div className="flex flex-wrap items-center gap-3 rounded-[8px] border border-[#E20010]/40 bg-[#E20010]/10 px-4 py-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E20010]">
-                  <ShieldAlert size={16} />
-                </span>
-                <p className="text-sm leading-6 text-white/90">
-                  <span className="font-semibold text-white">Top risk: {topTheme.theme}</span> &mdash;{' '}
-                  {topTheme.share.toFixed(1)}% of this period&apos;s low-star volume
-                  {actionability.highestRiskCategory
-                    ? `, led by ${actionability.highestRiskCategory} defects`
-                    : ''}
-                  .
-                </p>
-              </div>
-            ) : (
-              <div className="rounded-[8px] border border-white/10 bg-white/[0.04] px-4 py-3">
-                <p className="text-sm text-white/70">
-                  No single complaint theme dominated this period&apos;s low-star volume.
-                </p>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-              {stats.map((stat) => {
-                const Icon = stat.icon
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">
+              Key Insights
+            </p>
+            <div className="mt-3 space-y-2.5">
+              {insights.map((item, index) => {
+                const Icon = item.icon
                 return (
-                  <div
-                    key={stat.label}
-                    className="rounded-[8px] border border-white/10 bg-white/[0.04] p-3.5"
-                  >
-                    <div className="flex items-center gap-2 text-white/50">
-                      <Icon size={14} />
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em]">{stat.label}</p>
-                    </div>
-                    <p className="mt-2 text-2xl font-semibold text-white">{stat.value}</p>
+                  <div key={index} className="flex items-start gap-2.5">
+                    <Icon size={15} className="mt-0.5 shrink-0 text-[#E20010]" />
+                    <p className="text-sm leading-6 text-white/85">{item.text}</p>
                   </div>
                 )
               })}
             </div>
           </div>
         </div>
-
-        <p className="mt-6 text-sm leading-7 text-white/60">
-          {formatNumber(currentWindowImages.length)} reviews included photo evidence, and the brand responded to{' '}
-          {formatPercent(responseMetrics.responseRate)} of this period&apos;s low-star reviews.
-        </p>
       </div>
     </Panel>
   )
