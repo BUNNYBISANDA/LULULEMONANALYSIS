@@ -20,21 +20,33 @@ import { buildVolumeTrend, formatShortDate, truncateText } from '../data/selecto
 import { useDashboardDataset } from '../hooks/useDataset'
 
 function resolveTrendCopy(volumeTrend) {
+  const percent = Math.abs(Math.round(volumeTrend.deltaPercent || 0))
+  const delta = Math.abs(volumeTrend.delta || 0)
+  const movementCopy =
+    percent > 250
+      ? `${delta} more low-star reviews than the prior month.`
+      : `${percent}% increase versus the prior month.`
+
   if (volumeTrend.direction === 'increased') {
     return {
       label: 'Complaint volume rising',
       tone: 'negative',
       icon: TrendingUp,
-      copy: `${Math.abs(Math.round(volumeTrend.deltaPercent || 0))}% increase versus the prior month.`,
+      copy: movementCopy,
     }
   }
 
   if (volumeTrend.direction === 'decreased') {
+    const easingCopy =
+      percent > 250
+        ? `${delta} fewer low-star reviews than the prior month.`
+        : `${percent}% decrease versus the prior month.`
+
     return {
       label: 'Complaint volume easing',
       tone: 'positive',
       icon: TrendingDown,
-      copy: `${Math.abs(Math.round(volumeTrend.deltaPercent || 0))}% decrease versus the prior month.`,
+      copy: easingCopy,
     }
   }
 

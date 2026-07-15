@@ -41,6 +41,25 @@ function getAverageRating(reviews) {
   return sum / reviews.length
 }
 
+function formatVolumeChange({ currentCount, previousCount, direction, periodNoun, deltaPercent }) {
+  if (!previousCount) {
+    return `No prior ${periodNoun} data to compare`
+  }
+
+  if (direction === 'stable') {
+    return `Volume held steady at ${formatNumber(currentCount)} reviews vs prior ${periodNoun}`
+  }
+
+  const delta = Math.abs(currentCount - previousCount)
+  const percent = Math.abs(Math.round(deltaPercent))
+
+  if (previousCount < 10 || percent > 250) {
+    return `Volume ${direction} by ${formatNumber(delta)} reviews vs prior ${periodNoun} (${formatNumber(previousCount)} to ${formatNumber(currentCount)})`
+  }
+
+  return `Volume ${direction} ${percent}% vs prior ${periodNoun} (${formatNumber(previousCount)} to ${formatNumber(currentCount)})`
+}
+
 export default function ExecutiveSummaryPanel({ data, periodValue, onPeriodChange }) {
   const selectedOption =
     SUMMARY_PERIOD_OPTIONS.find((option) => option.value === periodValue) || SUMMARY_PERIOD_OPTIONS[0]
@@ -93,9 +112,13 @@ export default function ExecutiveSummaryPanel({ data, periodValue, onPeriodChang
   const highlights = [
     {
       icon: TrendIcon,
-      text: previousWindowReviews.length
-        ? `Volume ${direction} ${Math.abs(Math.round(deltaPercent))}% vs prior ${periodNoun}`
-        : `No prior ${periodNoun} data to compare`,
+      text: formatVolumeChange({
+        currentCount: currentWindowReviews.length,
+        previousCount: previousWindowReviews.length,
+        direction,
+        periodNoun,
+        deltaPercent,
+      }),
     },
     {
       icon: Ruler,
