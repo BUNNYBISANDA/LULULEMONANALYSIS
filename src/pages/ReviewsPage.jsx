@@ -272,30 +272,11 @@ export default function Reviews() {
             </select>
           </label>
         </div>
-        <div className="mt-3 flex w-full flex-wrap items-center gap-2 border-t border-[#f0f0f0] pt-3">
-          {columnDefinitions.map((column) => (
-            <button
-              key={column.key}
-              type="button"
-              onClick={() =>
-                setVisibleColumns((current) => ({
-                  ...current,
-                  [column.key]: !current[column.key],
-                }))
-              }
-              className={`rounded-full border px-3 py-1.5 text-xs transition ${
-                visibleColumns[column.key]
-                  ? 'border-black bg-black text-white'
-                  : 'border-[#e5e5e5] bg-white text-[#4a4a4a]'
-              }`}
-            >
-              {column.label}
-            </button>
-          ))}
+        <div className="mt-3 flex w-full items-center justify-end border-t border-[#f0f0f0] pt-3">
           <button
             type="button"
             onClick={resetFilters}
-            className="rounded-full border border-[#e5e5e5] bg-white px-3 py-1.5 text-xs text-[#000000] hover:border-black"
+            className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-2 text-sm text-[#000000] hover:border-black"
           >
             Clear Filters
           </button>
