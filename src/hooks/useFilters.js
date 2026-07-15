@@ -17,8 +17,7 @@ function parseValue(rawValue, fallback) {
 export function useFilters(defaults) {
   const [stableDefaults] = useState(defaults)
   const [searchParams, setSearchParams] = useSearchParams()
-
-  const filters = useMemo(() => {
+  const [filters, setFilters] = useState(() => {
     const next = {}
 
     Object.entries(stableDefaults).forEach(([key, fallback]) => {
@@ -26,31 +25,39 @@ export function useFilters(defaults) {
     })
 
     return next
-  }, [searchParams, stableDefaults])
+  })
 
   const updateFilter = useCallback((key, value) => {
-    const next = new URLSearchParams(searchParams)
-    const fallback = stableDefaults[key]
-    const serialized = Array.isArray(value)
-      ? value.join(',')
-      : value === ALL_FILTER_VALUE || value === '' || value === null || value === undefined
-        ? ''
-        : String(value)
+    setFilters((current) => ({
+      ...current,
+      [key]: value,
+    }))
 
-    const defaultSerialized = Array.isArray(fallback) ? fallback.join(',') : String(fallback)
+    setSearchParams((currentParams) => {
+      const nextParams = new URLSearchParams(currentParams)
+      const fallback = stableDefaults[key]
+      const serialized = Array.isArray(value)
+        ? value.join(',')
+        : value === ALL_FILTER_VALUE || value === '' || value === null || value === undefined
+          ? ''
+          : String(value)
 
-    if (!serialized || serialized === defaultSerialized) {
-      next.delete(key)
-    } else {
-      next.set(key, serialized)
-    }
+      const defaultSerialized = Array.isArray(fallback) ? fallback.join(',') : String(fallback)
 
-    setSearchParams(next, { replace: true })
-  }, [searchParams, setSearchParams, stableDefaults])
+      if (!serialized || serialized === defaultSerialized) {
+        nextParams.delete(key)
+      } else {
+        nextParams.set(key, serialized)
+      }
+
+      return nextParams
+    }, { replace: true })
+  }, [setSearchParams, stableDefaults])
 
   const resetFilters = useCallback(() => {
+    setFilters(stableDefaults)
     setSearchParams(new URLSearchParams(), { replace: true })
-  }, [setSearchParams])
+  }, [setSearchParams, stableDefaults])
 
   return {
     filters,
