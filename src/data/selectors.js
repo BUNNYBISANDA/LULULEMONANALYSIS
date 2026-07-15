@@ -1121,23 +1121,35 @@ export function filterReviews(reviews = [], filters = {}) {
     query = '',
   } = filters
 
-  const normalizedQuery = query.trim().toLowerCase()
-  const fromTime = hasValue(from) ? new Date(from).getTime() : null
-  const toTime = hasValue(to) ? new Date(to).getTime() : null
+  const normalizedQuery = String(query || '').trim().toLowerCase()
+  const fromTime = parseDateStart(from)
+  const toTime = parseDateEnd(to)
 
   return reviews.filter((review) => {
-    const reviewTime = new Date(review.reviewDate).getTime()
-    const matchesRating = rating === ALL_FILTER_VALUE || String(review.rating) === String(rating)
-    const matchesTheme = themes.length === 0 || themes.includes(review.complaintTheme)
+    const reviewDate = pickFirstValue(review.reviewDate, review.review_date, review.submission_time)
+    const reviewTime = new Date(reviewDate).getTime()
+    const reviewRating = pickFirstValue(review.rating, review.Rating)
+    const reviewTheme = pickFirstValue(review.complaintTheme, review.complaint_theme)
+    const verifiedBuyer =
+      normalizeOptionalTruth(
+        pickFirstValue(review.verifiedBuyer, review.verified_buyer, review.is_verified_buyer),
+      ) ?? false
+    const reviewTitle = pickFirstValue(review.title, review.review_title)
+    const reviewText = pickFirstValue(review.reviewText, review.review_text, review.text)
+    const reviewId = pickFirstValue(review.reviewId, review.review_id)
+    const productName = pickFirstValue(review.productName, review.product_name)
+
+    const matchesRating = rating === ALL_FILTER_VALUE || String(reviewRating) === String(rating)
+    const matchesTheme = themes.length === 0 || themes.includes(reviewTheme)
     const matchesVerified =
       verified === ALL_FILTER_VALUE ||
-      (verified === 'true' && review.verifiedBuyer === true) ||
-      (verified === 'false' && review.verifiedBuyer === false)
+      (verified === 'true' && verifiedBuyer === true) ||
+      (verified === 'false' && verifiedBuyer === false)
     const matchesFrom = fromTime === null || (!Number.isNaN(reviewTime) && reviewTime >= fromTime)
     const matchesTo = toTime === null || (!Number.isNaN(reviewTime) && reviewTime <= toTime)
     const matchesQuery =
       !normalizedQuery ||
-      `${review.title} ${review.reviewText} ${review.reviewId} ${review.complaintTheme} ${review.productName}`
+      `${reviewTitle} ${reviewText} ${reviewId} ${reviewTheme} ${productName}`
         .toLowerCase()
         .includes(normalizedQuery)
 
@@ -1177,6 +1189,34 @@ export function sortReviews(reviews = [], sortBy = 'newest') {
   return items
 }
 
+function parseDateStart(value) {
+  if (!hasValue(value)) {
+    return null
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return null
+  }
+
+  date.setHours(0, 0, 0, 0)
+  return date.getTime()
+}
+
+function parseDateEnd(value) {
+  if (!hasValue(value)) {
+    return null
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return null
+  }
+
+  date.setHours(23, 59, 59, 999)
+  return date.getTime()
+}
+
 export function filterGalleryItems(items = [], filters = {}) {
   const {
     rating = ALL_FILTER_VALUE,
@@ -1188,18 +1228,25 @@ export function filterGalleryItems(items = [], filters = {}) {
     sortBy = 'newest',
   } = filters
 
-  const fromTime = hasValue(from) ? new Date(from).getTime() : null
-  const toTime = hasValue(to) ? new Date(to).getTime() : null
+  const fromTime = parseDateStart(from)
+  const toTime = parseDateEnd(to)
 
   const filtered = items.filter((item) => {
-    const imageTime = new Date(item.reviewDate).getTime()
-    const matchesRating = rating === ALL_FILTER_VALUE || String(item.rating) === String(rating)
-    const matchesTheme = theme === ALL_FILTER_VALUE || item.complaintTheme === theme
+    const itemDate = pickFirstValue(item.reviewDate, item.review_date)
+    const imageTime = new Date(itemDate).getTime()
+    const itemRating = pickFirstValue(item.rating, item.Rating)
+    const itemTheme = pickFirstValue(item.complaintTheme, item.complaint_theme, item.theme)
+    const verifiedBuyer =
+      normalizeOptionalTruth(pickFirstValue(item.verifiedBuyer, item.verified_buyer)) ?? false
+    const itemSize = pickFirstValue(item.sizePurchased, item.size_purchased)
+
+    const matchesRating = rating === ALL_FILTER_VALUE || String(itemRating) === String(rating)
+    const matchesTheme = theme === ALL_FILTER_VALUE || itemTheme === theme
     const matchesVerified =
       verified === ALL_FILTER_VALUE ||
-      (verified === 'true' && item.verifiedBuyer === true) ||
-      (verified === 'false' && item.verifiedBuyer === false)
-    const matchesSize = size === ALL_FILTER_VALUE || item.sizePurchased === size
+      (verified === 'true' && verifiedBuyer === true) ||
+      (verified === 'false' && verifiedBuyer === false)
+    const matchesSize = size === ALL_FILTER_VALUE || itemSize === size
     const matchesFrom = fromTime === null || (!Number.isNaN(imageTime) && imageTime >= fromTime)
     const matchesTo = toTime === null || (!Number.isNaN(imageTime) && imageTime <= toTime)
 

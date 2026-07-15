@@ -220,7 +220,7 @@ export default function Reviews() {
             meta={`Selected period: ${data.selectedTimePeriod}. Showing ${data.periodRangeLabel}.`}
           />
         </div>
-        <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-2 xl:grid-cols-[0.8fr_1.3fr_0.8fr_auto_0.8fr]">
+        <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(140px,0.8fr)_minmax(220px,1.3fr)_minmax(140px,0.8fr)_minmax(260px,1fr)_minmax(140px,0.8fr)]">
           <label className="flex min-w-0 flex-col gap-1 text-sm text-[#4a4a4a]">
             <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
               Rating
@@ -272,7 +272,7 @@ export default function Reviews() {
             </select>
           </label>
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="mt-3 flex w-full flex-wrap items-center gap-2 border-t border-[#f0f0f0] pt-3">
           {columnDefinitions.map((column) => (
             <button
               key={column.key}

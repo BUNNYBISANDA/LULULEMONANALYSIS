@@ -140,7 +140,7 @@ export default function Gallery() {
             meta={`Selected period: ${data.selectedTimePeriod}. Showing ${data.periodRangeLabel}.`}
           />
         </div>
-        <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[0.7fr_1fr_0.9fr_0.8fr_auto_0.8fr]">
+        <div className="grid min-w-0 flex-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(120px,0.7fr)_minmax(160px,1fr)_minmax(110px,0.9fr)_minmax(120px,0.8fr)_minmax(260px,1fr)_minmax(120px,0.8fr)]">
           <label className="flex min-w-0 flex-col gap-1 text-sm text-[#4a4a4a]">
             <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#767676] sm:tracking-[0.18em]">
               Rating
@@ -219,7 +219,7 @@ export default function Gallery() {
             </select>
           </label>
         </div>
-        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="mt-3 flex w-full flex-col gap-3 border-t border-[#f0f0f0] pt-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <p className="text-sm text-[#4a4a4a]">
             Showing {filteredItems.length} images across {groupedItems.length} reviews
           </p>
